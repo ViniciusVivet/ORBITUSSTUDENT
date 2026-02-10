@@ -1,76 +1,74 @@
 # Orbitus Classroom RPG
 
-Dashboard gamificado para acompanhar alunos. Este README explica **como rodar** e **como testar sem API**.
+> Dashboard gamificado para professores acompanharem o progresso dos alunos como personagens de RPG.
+
+[![Node](https://img.shields.io/badge/Node-18+-339933?logo=node.js&logoColor=white)](https://nodejs.org)
+[![pnpm](https://img.shields.io/badge/pnpm-9+-F69220?logo=pnpm&logoColor=white)](https://pnpm.io)
+[![Next.js](https://img.shields.io/badge/Next.js-14-000?logo=next.js&logoColor=white)](https://nextjs.org)
+[![NestJS](https://img.shields.io/badge/NestJS-API-E0234E?logo=nestjs&logoColor=white)](https://nestjs.com)
+[![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?logo=prisma&logoColor=white)](https://prisma.io)
 
 ---
 
-## Testar o site sem API (modo demo)
+## 🎮 Testar sem API (modo demo)
 
 Você pode ver toda a interface **sem instalar PostgreSQL nem subir a API**:
 
 1. `pnpm install` e depois `pnpm dev:web`
 2. Abra **http://localhost:3000**
-3. Na tela de login, clique em **“Modo demo (testar sem API)”**
-4. Você verá o Roster com 4 alunos de exemplo. Clique em qualquer um para abrir o modal, use “Cadastrar aluno”, “Dashboard”, etc. Nada é salvo no servidor — só no navegador.
+3. Na tela de login, clique em **"Modo demo (testar sem API)"**
+4. Você verá o Roster com alunos de exemplo. Clique em qualquer um para abrir o modal, use "Cadastrar aluno", "Dashboard", etc. Nada é salvo no servidor — só no navegador.
 
-Para saber o que está pronto e o que usa mock, veja **[docs/PROJECT-STATUS.md](docs/PROJECT-STATUS.md)**.
-
----
-
-## Rodar com API e banco (dados reais)
-
-### O que você precisa ter
-
-1. **Node.js** 18 ou mais novo ([nodejs.org](https://nodejs.org))
-2. **pnpm** — depois de instalar o Node, abra um terminal e rode: `npm install -g pnpm`
-3. **PostgreSQL** — o banco de dados. **Docker não é obrigatório.** Você pode:
-   - **Com Docker:** rodar só o Postgres com `docker-compose up -d postgres` (mais rápido de subir).
-   - **Sem Docker:** instalar o PostgreSQL no Windows ([postgresql.org/download](https://www.postgresql.org/download/windows/)), criar um banco `orbitus` e um usuário com senha (ex.: usuário `orbitus`, senha `orbitus`). Se for diferente, edite a linha `DATABASE_URL` no arquivo `apps/api/.env`.
-
-A **configuração da API** (endereço do banco, porta, etc.) já está no projeto no arquivo `apps/api/.env`. Só precisa mudar algo ali se o seu Postgres for em outro lugar ou com outro usuário/senha.
+[![Status do projeto](https://img.shields.io/badge/docs-Status_do_projeto_%26_demo-8B5CF6?style=flat-square)](docs/PROJECT-STATUS.md)
 
 ---
 
-## Como rodar (passo a passo)
+## 🚀 Rodar com API e banco (dados reais)
 
-### Passo 1 — Instalar dependências do projeto
+### O que você precisa
 
-Na pasta do projeto, abra um terminal e rode:
+| Requisito | Detalhe |
+|-----------|---------|
+| **Node.js** | 18+ em [nodejs.org](https://nodejs.org) |
+| **pnpm** | `npm install -g pnpm` |
+| **PostgreSQL** | Com Docker: `docker-compose up -d postgres` — ou instale local ([postgresql.org](https://www.postgresql.org/download/windows/)) e crie banco `orbitus` + usuário/senha. Ajuste `apps/api/.env` se precisar. |
+
+A **configuração da API** (banco, porta, etc.) está em `apps/api/.env`. Só altere se o seu Postgres for em outro host/usuário/senha.
+
+---
+
+## 📦 Como rodar (passo a passo)
+
+### 1. Instalar dependências
+
+Na pasta do projeto:
 
 ```bash
 pnpm install
 ```
 
-Espera terminar (pode demorar um pouco na primeira vez).
+### 2. Subir o banco (PostgreSQL)
 
----
-
-### Passo 2 — Subir o banco de dados (PostgreSQL)
-
-**Se você tem Docker instalado:**
+**Com Docker:**
 
 ```bash
 docker-compose up -d postgres
 ```
 
-Isso sobe só o Postgres, na porta 5432, com usuário `orbitus`, senha `orbitus` e banco `orbitus`. O arquivo `.env` da API já está apontando para isso.
+(Postgres na porta 5432, usuário `orbitus`, senha `orbitus`, banco `orbitus` — o `.env` da API já aponta para isso.)
 
-**Se você não tem Docker:** instale o PostgreSQL, crie um banco `orbitus` e um usuário com senha (por exemplo usuário `orbitus`, senha `orbitus`). Se o seu usuário ou senha for diferente, edite o arquivo `apps/api/.env` e altere a linha `DATABASE_URL` com o usuário, senha e nome do banco corretos.
+**Sem Docker:** instale o PostgreSQL, crie o banco `orbitus` e usuário/senha. Se for diferente, edite `DATABASE_URL` em `apps/api/.env`.
 
----
-
-### Passo 3 — Criar as tabelas e o usuário de teste
-
-Ainda na pasta do projeto, rode:
+### 3. Criar tabelas e dados de teste
 
 ```bash
 pnpm db:generate
 pnpm db:migrate
 ```
 
-Quando o Prisma perguntar o nome da migração, pode digitar `init` e Enter.
+(Quando o Prisma pedir o nome da migração, digite `init` e Enter.)
 
-Depois, rodar o seed (cria o professor de teste e alguns dados iniciais):
+Depois, seed (professor de teste e dados iniciais):
 
 ```bash
 cd apps/api
@@ -78,13 +76,9 @@ pnpm prisma:seed
 cd ../..
 ```
 
-(No PowerShell você pode rodar: `cd apps\api; pnpm prisma:seed; cd ..\..`)
+No PowerShell: `cd apps\api; pnpm prisma:seed; cd ..\..`
 
----
-
-### Passo 4 — Ligar a API e o site
-
-Você precisa de **dois terminais** abertos na pasta do projeto.
+### 4. Ligar API e site (dois terminais)
 
 **Terminal 1 — API:**
 
@@ -92,45 +86,43 @@ Você precisa de **dois terminais** abertos na pasta do projeto.
 pnpm dev:api
 ```
 
-Deixe rodando. Quando aparecer algo como “API rodando em http://localhost:3001”, está ok.
+Aguarde aparecer algo como *"API rodando em http://localhost:3001"*.
 
-**Terminal 2 — Site (web):**
+**Terminal 2 — Site:**
 
 ```bash
 pnpm dev:web
 ```
 
-Deixe rodando. Quando abrir, o site estará em **http://localhost:3000**.
+Site em **http://localhost:3000**.
 
----
+### 5. Usar o sistema
 
-### Passo 5 — Usar o sistema
-
-1. Abra o navegador em **http://localhost:3000**
+1. Abra **http://localhost:3000**
 2. Clique em **Entrar**
-3. Use o login de teste: **e-mail** `prof@escola.com` e **senha** `senha123`
-4. Você cai na lista de alunos (Roster). No início pode estar vazia; dá para criar alunos pela documentação da API em **http://localhost:3001/api/docs** (Swagger).
+3. Login de teste: **e-mail** `prof@escola.com` | **senha** `senha123`
+4. Você cai no Roster. Para criar alunos via API, use o Swagger em **http://localhost:3001/api/docs**.
 
 ---
 
-## Resumo rápido
+## 📋 Resumo rápido
 
-| O quê            | Comando / Onde                          |
-|------------------|------------------------------------------|
-| Instalar deps    | `pnpm install`                           |
-| Subir o banco    | `docker-compose up -d postgres`          |
-| Criar tabelas     | `pnpm db:generate` e `pnpm db:migrate`   |
-| Dados de teste   | `cd apps/api` → `pnpm prisma:seed`       |
-| Ligar API        | `pnpm dev:api` (terminal 1)              |
-| Ligar site       | `pnpm dev:web` (terminal 2)               |
-| Abrir o site     | http://localhost:3000                   |
-| Login de teste   | prof@escola.com / senha123               |
-
-A **configuração da API e do banco** já está feita no projeto (arquivo `apps/api/.env`). Você só precisa ter o Postgres rodando (Docker ou instalado) e seguir os passos acima.
+| O quê | Comando / Onde |
+|-------|----------------|
+| Instalar deps | `pnpm install` |
+| Subir o banco | `docker-compose up -d postgres` |
+| Criar tabelas | `pnpm db:generate` e `pnpm db:migrate` |
+| Dados de teste | `cd apps/api` → `pnpm prisma:seed` |
+| Ligar API | `pnpm dev:api` (terminal 1) |
+| Ligar site | `pnpm dev:web` (terminal 2) |
+| Abrir o site | http://localhost:3000 |
+| Login de teste | `prof@escola.com` / `senha123` |
 
 ---
 
-## Documentação
+## 📚 Documentação
 
-- **[Status do projeto e modo demo](docs/PROJECT-STATUS.md)** — o que está pronto, o que é mock, o que depende da API. Atualize este doc conforme o projeto avança.
-- **[Especificação completa](docs/SPEC-ORBITUS-CLASSROOM-RPG.md)** — escopo, arquitetura, modelo de dados, backlog.
+| Doc | Descrição |
+|-----|-----------|
+| [**Status do projeto e modo demo**](docs/PROJECT-STATUS.md) | O que está pronto, o que é mock, o que depende da API. |
+| [**Especificação completa**](docs/SPEC-ORBITUS-CLASSROOM-RPG.md) | Escopo, arquitetura, modelo de dados, backlog. |
