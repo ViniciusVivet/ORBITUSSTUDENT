@@ -15,24 +15,55 @@
 ```
 OrbitusStudent/
 ├── apps/
-│   ├── api/                    # Backend NestJS (CQRS, Prisma, JWT)
-│   │   ├── prisma/             # schema.prisma, seed
-│   │   └── src/
-│   │       ├── auth/           # login JWT, guards, roles
-│   │       ├── common/         # decorators, filters, guards
-│   │       ├── dashboard/     # overview (métricas)
-│   │       ├── prisma/        # PrismaModule, PrismaService
-│   │       └── students/      # CRUD, lessons, blockers, goals (commands/queries)
-│   └── web/                    # Frontend Next.js 14
-│       └── src/
-│           ├── app/            # rotas: /, /login, /roster, /dashboard, /students/[id], /students/new
-│           ├── components/     # StudentModal, DemoBadge
-│           └── lib/            # mock-data.ts (modo demo)
+│   ├── api/                           # Backend NestJS (CQRS, Prisma, JWT)
+│   │   ├── prisma/
+│   │   │   ├── schema.prisma
+│   │   │   └── seed.ts
+│   │   ├── src/
+│   │   │   ├── auth/                  # POST /auth/login, JWT, guards, roles
+│   │   │   ├── common/                # decorators, filters, guards
+│   │   │   ├── dashboard/             # GET /dashboard/overview, /dashboard/by-class
+│   │   │   ├── students/              # CRUD alunos, lessons, blockers, goals (CQRS)
+│   │   │   │   ├── commands/          # create, update, register-lesson, add-blocker, goals
+│   │   │   │   ├── queries/           # list, getById, summary, class-groups, topics, blockers, goals
+│   │   │   │   ├── dto/
+│   │   │   │   └── students.controller.ts
+│   │   │   ├── ai/                    # GET /ai/status, /ai/insights, POST /ai/chat (Gemini)
+│   │   │   ├── prisma/
+│   │   │   ├── app.module.ts
+│   │   │   └── main.ts
+│   │   ├── .env.example
+│   │   └── README.md
+│   └── web/                           # Frontend Next.js 14 (App Router)
+│       ├── src/
+│       │   ├── app/
+│       │   │   ├── page.tsx           # / (início)
+│       │   │   ├── layout.tsx         # layout global, skip link
+│       │   │   ├── error.tsx          # error boundary
+│       │   │   ├── not-found.tsx      # 404
+│       │   │   ├── login/             # /login
+│       │   │   ├── roster/            # /roster (lista, filtros, paginação, CSV)
+│       │   │   ├── dashboard/         # /dashboard (métricas, Por turma, IA)
+│       │   │   └── students/
+│       │   │       ├── new/           # /students/new (cadastrar aluno)
+│       │   │       └── [id]/          # /students/[id] (ficha do aluno)
+│       │   ├── components/            # AppHeader, StudentModal, DemoBadge
+│       │   └── lib/
+│       │       └── mock-data.ts       # modo demo
+│       ├── .env.example
+│       └── README.md
 ├── packages/
-│   └── shared/                 # Tipos e DTOs compartilhados
-├── docs/                       # SPEC, PROJECT-STATUS, schema de referência
-├── docker-compose.yml          # Postgres
-├── package.json                # scripts raiz (dev:api, dev:web, db:*)
+│   └── shared/                        # Tipos e DTOs compartilhados (@orbitus/shared)
+├── docs/
+│   ├── SPEC-ORBITUS-CLASSROOM-RPG.md   # Especificação completa
+│   ├── PROJECT-STATUS.md              # Status e modo demo
+│   ├── ROUTES-AND-API.md               # Rotas frontend ↔ endpoints API
+│   ├── IMPROVEMENTS.md                 # Melhorias 1–14
+│   ├── IMPROVEMENTS-ROUND2.md          # Melhorias rodada 2
+│   ├── IMPROVEMENTS-ROUND3.md          # Melhorias rodada 3 (por impacto)
+│   └── prisma-schema-reference.prisma
+├── docker-compose.yml                 # PostgreSQL
+├── package.json                       # scripts raiz (dev:api, dev:web, db:*)
 └── pnpm-workspace.yaml
 ```
 
@@ -42,9 +73,9 @@ OrbitusStudent/
 
 | Área | Recursos |
 |------|----------|
-| **Frontend** | Login, modo demo, Roster com busca/filtros e setas, modal do aluno (HUD, barras, últimas aulas), ficha (aula, bloqueios, metas, timeline), cadastro de aluno com avatares, dashboard, logout, responsivo e reduced-motion. |
-| **Backend** | Auth JWT, CRUD de alunos, resumo e summary, tópicos, registrar aula (XP/habilidades), dashboard overview, bloqueios (listar/criar/resolver), metas (listar/criar/atualizar status). |
-| **Infra** | Monorepo pnpm, Prisma + PostgreSQL, Docker Compose para o banco, Swagger em `/api/docs`. |
+| **Frontend** | Login, modo demo, Roster com busca (**debounce**), filtros (turma, status, sem aula há 7+/14+ dias), **ordenação** (nome, XP, nível), **paginação / "Carregar mais"**, **exportar CSV**, **Roster lê classGroupId da URL** (link "Ver alunos" do Dashboard), cadastro com **turma**, modal do aluno (**focus trap**, Escape fecha), ficha com **editar dados**, **breadcrumb**, **toast acessível** (aria-live), **mensagens de validação** claras nos formulários, metas com **destaque de prazo** e **confirmação ao concluir**, dashboard com **Por turma** e **empty state**, Insights IA e chat (Gemini), **navegação global**, **404**, **error boundary**, **skip link**, **título por página**, **loading skeleton** (Roster e ficha), **"Tentar de novo"** em falhas (Roster e ficha), responsivo e reduced-motion. |
+| **Backend** | Auth JWT, CRUD e **PATCH** de alunos, **listar turmas** (class-groups), resumo e summary, tópicos, registrar aula (XP/habilidades), dashboard overview e **by-class**, **noLessonSinceDays**, **limit/offset** em list students, bloqueios, metas, **módulo AI** (chat e insights com Gemini). |
+| **Infra** | Monorepo pnpm, Prisma + PostgreSQL, Docker Compose para o banco, Swagger em **http://localhost:3001/api/docs**. **Frontend e API** documentados: `apps/web/README.md`, `apps/api/README.md`; **rotas e conexão** em [docs/ROUTES-AND-API.md](docs/ROUTES-AND-API.md); **variáveis de ambiente** em `apps/api/.env.example` e `apps/web/.env.example`. |
 
 ---
 
@@ -53,7 +84,7 @@ OrbitusStudent/
 | Item | Descrição |
 |------|-----------|
 | **Avatar 3D no modal** | Renderização 3D (ex.: R3F) no modal do aluno, com fallback 2D. |
-| **V2 (especificação)** | PWA, sync offline, Insights IA no dashboard. |
+| **V2 (especificação)** | PWA, sync offline, mais insights automáticos. |
 
 Detalhes em [docs/SPEC-ORBITUS-CLASSROOM-RPG.md](docs/SPEC-ORBITUS-CLASSROOM-RPG.md) e [docs/PROJECT-STATUS.md](docs/PROJECT-STATUS.md).
 
@@ -82,7 +113,8 @@ Você pode ver toda a interface **sem instalar PostgreSQL nem subir a API**:
 | **pnpm** | `npm install -g pnpm` |
 | **PostgreSQL** | Com Docker: `docker-compose up -d postgres` — ou instale local ([postgresql.org](https://www.postgresql.org/download/windows/)) e crie banco `orbitus` + usuário/senha. Ajuste `apps/api/.env` se precisar. |
 
-A **configuração da API** (banco, porta, etc.) está em `apps/api/.env`. Só altere se o seu Postgres for em outro host/usuário/senha.
+- **API:** variáveis em `apps/api/.env` (copie de `apps/api/.env.example`). Para o **assistente IA** (chat e insights no dashboard), adicione `GEMINI_API_KEY` no `.env` da API — chave em [aistudio.google.com/apikey](https://aistudio.google.com/apikey) (tier gratuito).
+- **Frontend:** opcional `apps/web/.env.local` (copie de `apps/web/.env.example`). Se não definir `NEXT_PUBLIC_API_URL`, o padrão é `http://localhost:3001`.
 
 ---
 
@@ -174,4 +206,8 @@ Site em **http://localhost:3000**.
 | Doc | Descrição |
 |-----|-----------|
 | [**Status do projeto e modo demo**](docs/PROJECT-STATUS.md) | O que está pronto, o que é mock, o que depende da API. |
+| [**Rotas e conexão Frontend ↔ API**](docs/ROUTES-AND-API.md) | Todas as rotas do frontend e endpoints da API com onde são usados. |
 | [**Especificação completa**](docs/SPEC-ORBITUS-CLASSROOM-RPG.md) | Escopo, arquitetura, modelo de dados, backlog. |
+| [**Melhorias (rodadas 1–3)**](docs/IMPROVEMENTS.md) | Listas de melhorias implementadas (docs/IMPROVEMENTS-ROUND2.md, IMPROVEMENTS-ROUND3.md). |
+| **apps/web/README.md** | Como rodar o frontend, env, estrutura. |
+| **apps/api/README.md** | Como rodar a API, env, banco, estrutura. |
