@@ -1,12 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { StudentListItem } from '@orbitus/shared';
-import { isDemoMode, addStoredMockStudent } from '@/lib/mock-data';
+import { isDemoMode, addStoredMockStudent, MOCK_CLASS_GROUPS } from '@/lib/mock-data';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+
+interface ClassGroupOption {
+  id: string;
+  name: string;
+  course?: string | null;
+}
 
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;
@@ -35,10 +41,28 @@ export default function NewStudentPage() {
   const router = useRouter();
   const [displayName, setDisplayName] = useState('');
   const [fullName, setFullName] = useState('');
+  const [classGroupId, setClassGroupId] = useState('');
+  const [classGroups, setClassGroups] = useState<ClassGroupOption[]>([]);
   const [avatarType, setAvatarType] = useState<'template' | 'emoji' | 'photo'>('emoji');
   const [avatarValue, setAvatarValue] = useState('🧑‍🎓');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') document.title = 'Cadastrar aluno — Orbitus Classroom RPG';
+  }, []);
+
+  useEffect(() => {
+    if (isDemoMode()) {
+      setClassGroups(MOCK_CLASS_GROUPS.map((g) => ({ id: g.id, name: g.name, course: g.course ?? null })));
+      return;
+    }
+    const token = getToken();
+    if (!token) return;
+    fetch(`${API_URL}/students/class-groups`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((list) => Array.isArray(list) && setClassGroups(list));
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -52,6 +76,7 @@ export default function NewStudentPage() {
       return;
     }
     if (isDemoMode()) {
+      const selectedGroup = classGroupId ? MOCK_CLASS_GROUPS.find((g) => g.id === classGroupId) : null;
       const newStudent: StudentListItem = {
         id: `mock-${Date.now()}`,
         displayName: displayName.trim(),
@@ -62,7 +87,7 @@ export default function NewStudentPage() {
         level: 1,
         xp: 0,
         status: 'active',
-        classGroup: null,
+        classGroup: selectedGroup ? { id: selectedGroup.id, name: selectedGroup.name } : null,
       };
       addStoredMockStudent(newStudent);
       router.push('/roster');
@@ -81,6 +106,7 @@ export default function NewStudentPage() {
         body: JSON.stringify({
           displayName: displayName.trim(),
           fullName: fullName.trim() || undefined,
+          classGroupId: classGroupId.trim() || undefined,
           avatarType,
           avatarValue,
         }),
@@ -100,7 +126,7 @@ export default function NewStudentPage() {
   }
 
   return (
-    <main className="min-h-screen p-8">
+    <main id="main" className="min-h-screen p-8">
       <div className="mx-auto max-w-lg">
         <div className="mb-8 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-orbitus-accent">Cadastrar aluno</h1>
@@ -130,10 +156,13 @@ export default function NewStudentPage() {
               <input
                 type="text"
                 value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
+                onChange={(e) => { setDisplayName(e.target.value); setError(''); }}
                 placeholder="Ex: João, Maria, Aluno 01"
                 className="w-full rounded-lg border border-gray-600 bg-orbitus-dark px-4 py-2 text-white placeholder-gray-500 focus:border-orbitus-accent focus:outline-none"
                 required
+                title="Preencha o nome ou apelido do aluno"
+                aria-invalid={!!error}
+                aria-describedby={error ? 'cadastro-error' : undefined}
               />
             </div>
 
@@ -149,6 +178,24 @@ export default function NewStudentPage() {
                 className="w-full rounded-lg border border-gray-600 bg-orbitus-dark px-4 py-2 text-white placeholder-gray-500 focus:border-orbitus-accent focus:outline-none"
               />
             </div>
+
+            {classGroups.length > 0 && (
+              <div>
+                <label className="mb-1 block text-sm text-gray-400">
+                  Turma (opcional)
+                </label>
+                <select
+                  value={classGroupId}
+                  onChange={(e) => setClassGroupId(e.target.value)}
+                  className="w-full rounded-lg border border-gray-600 bg-orbitus-dark px-4 py-2 text-white focus:border-orbitus-accent focus:outline-none"
+                >
+                  <option value="">Nenhuma</option>
+                  {classGroups.map((g) => (
+                    <option key={g.id} value={g.id}>{g.name}{g.course ? ` · ${g.course}` : ''}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-300">
@@ -181,7 +228,7 @@ export default function NewStudentPage() {
           </div>
 
           {error && (
-            <p className="mt-4 text-sm text-red-400">{error}</p>
+            <p id="cadastro-error" className="mt-4 text-sm text-red-400" role="alert">{error}</p>
           )}
 
           <div className="mt-6 flex gap-3">

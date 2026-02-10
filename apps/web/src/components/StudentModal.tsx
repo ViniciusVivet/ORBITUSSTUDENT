@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { StudentSummary, StudentListItem } from '@orbitus/shared';
 import { isDemoMode, getMockSummary } from '@/lib/mock-data';
+
+const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -22,6 +24,7 @@ interface StudentModalProps {
 export function StudentModal({ studentId, studentPreview, onClose }: StudentModalProps) {
   const [summary, setSummary] = useState<StudentSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const modalContentRef = useRef<HTMLDivElement>(null);
 
   const loadSummary = useCallback(async () => {
     if (isDemoMode()) {
@@ -64,6 +67,32 @@ export function StudentModal({ studentId, studentPreview, onClose }: StudentModa
     return () => window.removeEventListener('keydown', handleEscape);
   }, [onClose]);
 
+  useEffect(() => {
+    const el = modalContentRef.current;
+    if (!el) return;
+    const focusables = Array.from(el.querySelectorAll<HTMLElement>(FOCUSABLE));
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (first) first.focus();
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key !== 'Tab') return;
+      if (focusables.length === 0) return;
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last?.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first?.focus();
+        }
+      }
+    }
+    el.addEventListener('keydown', handleKeyDown);
+    return () => el.removeEventListener('keydown', handleKeyDown);
+  }, [loading, summary]);
+
   const s = summary?.student ?? studentPreview;
 
   return (
@@ -76,6 +105,10 @@ export function StudentModal({ studentId, studentPreview, onClose }: StudentModa
         onClick={onClose}
       >
         <motion.div
+          ref={modalContentRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-title"
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
@@ -98,7 +131,7 @@ export function StudentModal({ studentId, studentPreview, onClose }: StudentModa
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4 sm:p-6">
               <div className="mb-4 flex items-start justify-between">
                 <div>
-                  <h2 className="text-xl font-bold text-white">{s.displayName}</h2>
+                  <h2 id="modal-title" className="text-xl font-bold text-white">{s.displayName}</h2>
                   <p className="text-sm text-gray-400">
                     {s.classGroup?.name ?? 'Sem turma'} · Nível {s.level} · XP {s.xp}
                   </p>

@@ -2,12 +2,14 @@
 
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import type { StudentListItem } from '@orbitus/shared';
 import { StudentModal } from '@/components/StudentModal';
-import { isDemoMode, getAllMockStudents, logout } from '@/lib/mock-data';
+import { isDemoMode, getAllMockStudents } from '@/lib/mock-data';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+const PAGE_SIZE = 20;
 
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;
@@ -15,15 +17,35 @@ function getToken(): string | null {
 }
 
 export default function RosterPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const [students, setStudents] = useState<StudentListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [modalStudent, setModalStudent] = useState<StudentListItem | null>(null);
   const [search, setSearch] = useState('');
-  const [filterTurma, setFilterTurma] = useState<string>('');
+  const [searchDebounced, setSearchDebounced] = useState('');
+  const [filterTurma, setFilterTurma] = useState<string>(() => searchParams.get('classGroupId') ?? '');
   const [filterStatus, setFilterStatus] = useState<string>('');
+  const [filterNoLessonDays, setFilterNoLessonDays] = useState<number | ''>('');
+  const [sortBy, setSortBy] = useState<'name' | 'xp' | 'level'>('name');
+  const [totalFromApi, setTotalFromApi] = useState<number | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [displayCount, setDisplayCount] = useState(PAGE_SIZE); // demo: quantos exibir
   const [focusedIndex, setFocusedIndex] = useState(0);
+  const [retryTrigger, setRetryTrigger] = useState(0);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  useEffect(() => {
+    const q = searchParams.get('classGroupId') ?? '';
+    setFilterTurma((prev) => (prev !== q ? q : prev));
+  }, [searchParams]);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setSearchDebounced(search), 400);
+    return () => window.clearTimeout(t);
+  }, [search]);
 
   useEffect(() => {
     const token = getToken();
@@ -33,11 +55,21 @@ export default function RosterPage() {
     }
     if (isDemoMode()) {
       setStudents(getAllMockStudents());
+      setTotalFromApi(null);
       setError('');
       setLoading(false);
+      setDisplayCount(PAGE_SIZE);
       return;
     }
-    fetch(`${API_URL}/students`, {
+    setLoading(true);
+    const params = new URLSearchParams();
+    params.set('limit', String(PAGE_SIZE));
+    params.set('offset', '0');
+    if (searchDebounced.trim()) params.set('search', searchDebounced.trim());
+    if (filterTurma) params.set('classGroupId', filterTurma);
+    if (filterStatus) params.set('status', filterStatus);
+    if (filterNoLessonDays !== '' && filterNoLessonDays > 0) params.set('noLessonSinceDays', String(filterNoLessonDays));
+    fetch(`${API_URL}/students?${params.toString()}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
@@ -50,13 +82,14 @@ export default function RosterPage() {
       .then((data) => {
         if (data?.items) {
           setStudents(data.items);
+          setTotalFromApi(typeof data.total === 'number' ? data.total : data.items.length);
         } else if (data?.message) {
           setError(data.message);
         }
       })
       .catch(() => setError('Falha ao carregar. A API está rodando?'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [searchDebounced, filterTurma, filterStatus, filterNoLessonDays, retryTrigger]);
 
   const classGroups = useMemo(() => {
     const map = new Map<string, string>();
@@ -67,20 +100,54 @@ export default function RosterPage() {
   }, [students]);
 
   const filteredList = useMemo(() => {
-    return students.filter((s) => {
+    const list = students.filter((s) => {
       const matchSearch = !search.trim() || s.displayName.toLowerCase().includes(search.toLowerCase()) || (s.fullName?.toLowerCase().includes(search.toLowerCase()));
       const matchTurma = !filterTurma || s.classGroup?.id === filterTurma;
       const matchStatus = !filterStatus || s.status === filterStatus;
       return matchSearch && matchTurma && matchStatus;
     });
-  }, [students, search, filterTurma, filterStatus]);
+    const sorted = [...list].sort((a, b) => {
+      if (sortBy === 'name') return (a.displayName ?? '').localeCompare(b.displayName ?? '', 'pt-BR');
+      if (sortBy === 'xp') return (b.xp ?? 0) - (a.xp ?? 0);
+      if (sortBy === 'level') return (b.level ?? 0) - (a.level ?? 0);
+      return 0;
+    });
+    return sorted;
+  }, [students, search, filterTurma, filterStatus, sortBy]);
+
+  const displayedList = useMemo(() => {
+    if (isDemoMode()) return filteredList.slice(0, displayCount);
+    return filteredList;
+  }, [filteredList, displayCount]);
+
+  const hasMoreDemo = displayCount < filteredList.length;
+  const hasMoreApi = totalFromApi != null && students.length < totalFromApi && !loadingMore;
+
+  const loadMoreApi = useCallback(() => {
+    const token = getToken();
+    if (!token || isDemoMode() || loadingMore || totalFromApi == null || students.length >= totalFromApi) return;
+    setLoadingMore(true);
+    const params = new URLSearchParams();
+    params.set('limit', String(PAGE_SIZE));
+    params.set('offset', String(students.length));
+    if (searchDebounced.trim()) params.set('search', searchDebounced.trim());
+    if (filterTurma) params.set('classGroupId', filterTurma);
+    if (filterStatus) params.set('status', filterStatus);
+    if (filterNoLessonDays !== '' && filterNoLessonDays > 0) params.set('noLessonSinceDays', String(filterNoLessonDays));
+    fetch(`${API_URL}/students?${params.toString()}`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.items?.length) setStudents((prev) => [...prev, ...data.items]);
+      })
+      .finally(() => setLoadingMore(false));
+  }, [searchDebounced, filterTurma, filterStatus, filterNoLessonDays, students.length, totalFromApi, loadingMore]);
 
   const openModal = useCallback((s: StudentListItem) => setModalStudent(s), []);
-  const clampFocus = useCallback((i: number) => Math.max(0, Math.min(i, filteredList.length - 1)), [filteredList.length]);
+  const clampFocus = useCallback((i: number) => Math.max(0, Math.min(i, displayedList.length - 1)), [displayedList.length]);
 
   useEffect(() => {
     setFocusedIndex((prev) => clampFocus(prev));
-  }, [filteredList.length, clampFocus]);
+  }, [displayedList.length, clampFocus]);
 
   useEffect(() => {
     const el = cardRefs.current[focusedIndex];
@@ -89,26 +156,73 @@ export default function RosterPage() {
 
   const showDemoBanner = isDemoMode();
 
+  useEffect(() => {
+    if (typeof document !== 'undefined') document.title = 'Roster — Orbitus Classroom RPG';
+  }, []);
+
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center p-8">
-        <p className="text-gray-400">Carregando alunos…</p>
+      <main id="main" className="min-h-screen p-8">
+        <div className="mb-6">
+          <div className="mb-1 h-8 w-32 animate-pulse rounded bg-gray-700" />
+          <div className="h-4 w-48 animate-pulse rounded bg-gray-700/70" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true" aria-label="Carregando alunos">
+          {Array.from({ length: 9 }).map((_, i) => (
+            <div key={i} className="rounded-xl border border-gray-700 bg-orbitus-card p-5">
+              <div className="mb-3 flex items-center gap-3">
+                <div className="h-12 w-12 animate-pulse rounded-full bg-gray-600" />
+                <div className="flex-1">
+                  <div className="mb-1 h-4 w-24 animate-pulse rounded bg-gray-600" />
+                  <div className="h-3 w-20 animate-pulse rounded bg-gray-700" />
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="h-4 w-12 animate-pulse rounded bg-gray-600" />
+                <div className="h-5 w-14 animate-pulse rounded bg-gray-600" />
+              </div>
+            </div>
+          ))}
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen p-8">
+    <main id="main" className="min-h-screen p-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-orbitus-accent">Roster</h1>
-          <p className="text-gray-400">Sua party de alunos · {filteredList.length} de {students.length} aluno(s)</p>
+          <p className="text-gray-400">
+            Sua party de alunos · {displayedList.length}{isDemoMode() ? ` de ${filteredList.length}` : totalFromApi != null ? ` de ${totalFromApi}` : ''} aluno(s)
+          </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              const headers = ['Nome', 'Nome completo', 'Turma', 'Nível', 'XP', 'Status'];
+              const rows = displayedList.map((s) => [
+                s.displayName ?? '',
+                s.fullName ?? '',
+                s.classGroup?.name ?? '',
+                String(s.level ?? 0),
+                String(s.xp ?? 0),
+                s.status ?? '',
+              ]);
+              const csv = [headers.join(';'), ...rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(';'))].join('\r\n');
+              const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+              const a = document.createElement('a');
+              a.href = URL.createObjectURL(blob);
+              a.download = `alunos-${new Date().toISOString().slice(0, 10)}.csv`;
+              a.click();
+              URL.revokeObjectURL(a.href);
+            }}
+            className="rounded-lg border border-gray-600 px-4 py-2 text-sm text-gray-300 hover:bg-orbitus-card"
+          >
+            Exportar CSV
+          </button>
           <Link href="/students/new" className="rounded-lg bg-orbitus-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90">Cadastrar aluno</Link>
-          <Link href="/dashboard" className="rounded-lg border border-gray-600 px-4 py-2 text-sm text-gray-300 hover:bg-orbitus-card">Dashboard</Link>
-          <Link href="/" className="rounded-lg border border-gray-600 px-4 py-2 text-sm text-gray-300 hover:bg-orbitus-card">Início</Link>
-          <button type="button" onClick={logout} className="rounded-lg border border-red-500/50 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10">Sair</button>
         </div>
       </div>
 
@@ -122,7 +236,14 @@ export default function RosterPage() {
         />
         <select
           value={filterTurma}
-          onChange={(e) => setFilterTurma(e.target.value)}
+          onChange={(e) => {
+              const v = e.target.value;
+              setFilterTurma(v);
+              const params = new URLSearchParams(searchParams.toString());
+              if (v) params.set('classGroupId', v); else params.delete('classGroupId');
+              const q = params.toString();
+              router.replace(q ? `${pathname}?${q}` : pathname);
+            }}
           className="rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-white focus:border-orbitus-accent focus:outline-none"
         >
           <option value="">Todas as turmas</option>
@@ -140,6 +261,37 @@ export default function RosterPage() {
           <option value="inactive">Inativo</option>
           <option value="archived">Arquivado</option>
         </select>
+        {!isDemoMode() && (
+          <select
+            value={filterNoLessonDays === '' ? '' : filterNoLessonDays}
+            onChange={(e) => { const v = e.target.value; setFilterNoLessonDays(v === '' ? '' : Number(v)); }}
+            className="rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-sm text-white focus:border-orbitus-accent focus:outline-none"
+            aria-label="Filtro sem aula"
+          >
+            <option value="">Todos</option>
+            <option value="7">Sem aula há 7+ dias</option>
+            <option value="14">Sem aula há 14+ dias</option>
+          </select>
+        )}
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as 'name' | 'xp' | 'level')}
+          className="rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-sm text-white focus:border-orbitus-accent focus:outline-none"
+          aria-label="Ordenar por"
+        >
+          <option value="name">Nome (A–Z)</option>
+          <option value="xp">XP (maior primeiro)</option>
+          <option value="level">Nível (maior primeiro)</option>
+        </select>
+        {(search.trim() || filterTurma || filterStatus || filterNoLessonDays !== '') && (
+          <button
+            type="button"
+            onClick={() => { setSearch(''); setFilterTurma(''); setFilterStatus(''); setFilterNoLessonDays(''); }}
+            className="rounded-lg border border-gray-500 px-3 py-2 text-sm text-gray-400 hover:bg-orbitus-card hover:text-white"
+          >
+            Limpar filtros
+          </button>
+        )}
         {filteredList.length > 1 && (
           <div className="flex items-center gap-1">
             <button
@@ -176,10 +328,19 @@ export default function RosterPage() {
       )}
 
       {error && !showDemoBanner && (
-        <div className="mb-6 rounded-lg border border-red-500/50 bg-red-500/10 p-4 text-red-400">{error}</div>
+        <div className="mb-6 rounded-lg border border-red-500/50 bg-red-500/10 p-4 text-red-400">
+          <p>{error}</p>
+          <button
+            type="button"
+            onClick={() => { setError(''); setRetryTrigger((t) => t + 1); }}
+            className="mt-3 rounded bg-red-500/20 px-3 py-1.5 text-sm font-medium text-red-300 hover:bg-red-500/30"
+          >
+            Tentar de novo
+          </button>
+        </div>
       )}
 
-      {filteredList.length === 0 && !error && (
+      {displayedList.length === 0 && !error && (
         <div className="rounded-xl border border-dashed border-gray-600 bg-orbitus-card/50 p-12 text-center text-gray-400">
           {students.length === 0 ? (
             <>Nenhum aluno ainda. <Link href="/students/new" className="text-orbitus-accent underline">Cadastre o primeiro</Link> ou crie pela API em <a href={`${API_URL}/api/docs`} target="_blank" rel="noopener noreferrer" className="text-orbitus-accent underline">Swagger</a>.</>
@@ -193,13 +354,13 @@ export default function RosterPage() {
         className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
         role="list"
         onKeyDown={(e) => {
-          if (filteredList.length === 0) return;
+          if (displayedList.length === 0) return;
           if (e.key === 'ArrowLeft') { e.preventDefault(); setFocusedIndex((i) => clampFocus(i - 1)); }
           else if (e.key === 'ArrowRight') { e.preventDefault(); setFocusedIndex((i) => clampFocus(i + 1)); }
-          else if (e.key === 'Enter') { e.preventDefault(); const student = filteredList[focusedIndex]; if (student) openModal(student); }
+          else if (e.key === 'Enter') { e.preventDefault(); const student = displayedList[focusedIndex]; if (student) openModal(student); }
         }}
       >
-        {filteredList.map((s, i) => (
+        {displayedList.map((s, i) => (
           <motion.div
             key={s.id}
             ref={(el) => { cardRefs.current[i] = el; }}
@@ -229,6 +390,19 @@ export default function RosterPage() {
           </motion.div>
         ))}
       </div>
+
+      {(hasMoreDemo || hasMoreApi) && (
+        <div className="mt-6 flex justify-center">
+          <button
+            type="button"
+            onClick={() => isDemoMode() ? setDisplayCount((c) => c + PAGE_SIZE) : loadMoreApi()}
+            disabled={loadingMore}
+            className="rounded-lg border border-orbitus-accent/50 bg-orbitus-accent/10 px-6 py-2 text-orbitus-accent hover:bg-orbitus-accent/20 disabled:opacity-50"
+          >
+            {loadingMore ? 'Carregando…' : 'Carregar mais'}
+          </button>
+        </div>
+      )}
 
       {modalStudent && (
         <StudentModal studentId={modalStudent.id} studentPreview={modalStudent} onClose={() => setModalStudent(null)} />

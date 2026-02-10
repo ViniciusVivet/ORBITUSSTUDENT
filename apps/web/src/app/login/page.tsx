@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { DEMO_TOKEN } from '@/lib/mock-data';
@@ -13,6 +13,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState('senha123');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') document.title = 'Entrar — Orbitus Classroom RPG';
+  }, []);
 
   function enterDemoMode() {
     if (typeof window !== 'undefined') {
@@ -50,7 +54,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8">
+    <main id="main" className="flex min-h-screen flex-col items-center justify-center p-8">
       <div className="w-full max-w-sm rounded-xl bg-orbitus-card p-8 shadow-xl">
         <h1 className="mb-6 text-center text-2xl font-bold text-orbitus-accent">
           Entrar

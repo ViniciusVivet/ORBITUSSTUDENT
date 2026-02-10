@@ -33,6 +33,11 @@ export function addStoredMockStudent(student: StudentListItem): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
 }
 
+export const MOCK_CLASS_GROUPS = [
+  { id: 'g1', name: 'Turma A', course: 'Programação' },
+  { id: 'g2', name: 'Turma B', course: 'Programação' },
+] as const;
+
 export const MOCK_STUDENTS: StudentListItem[] = [
   {
     id: 'mock-1',

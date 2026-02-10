@@ -44,6 +44,35 @@ export default function StudentPage() {
   const [goals, setGoals] = useState<GoalItem[]>([]);
   const [showGoalForm, setShowGoalForm] = useState(false);
   const [goalSubmitting, setGoalSubmitting] = useState(false);
+  const [goalError, setGoalError] = useState('');
+  const [toastMessage, setToastMessage] = useState('');
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editDisplayName, setEditDisplayName] = useState('');
+  const [editFullName, setEditFullName] = useState('');
+  const [editClassGroupId, setEditClassGroupId] = useState('');
+  const [editStatus, setEditStatus] = useState<string>('active');
+  const [classGroupsForEdit, setClassGroupsForEdit] = useState<{ id: string; name: string }[]>([]);
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editError, setEditError] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
+
+  const showToast = useCallback((msg: string) => {
+    setToastMessage(msg);
+    window.setTimeout(() => setToastMessage(''), 3000);
+  }, []);
+
+  useEffect(() => {
+    if (!showEditForm || !id) return;
+    setEditDisplayName(summary?.student?.displayName ?? '');
+    setEditFullName(summary?.student?.fullName ?? '');
+    setEditClassGroupId((summary?.student as { classGroupId?: string })?.classGroupId ?? (summary?.student as { classGroup?: { id: string } })?.classGroup?.id ?? '');
+    setEditStatus((summary?.student as { status?: string })?.status ?? 'active');
+    if (!isDemoMode() && getToken()) {
+      fetch(`${API_URL}/students/class-groups`, { headers: { Authorization: `Bearer ${getToken()}` } })
+        .then((res) => (res.ok ? res.json() : []))
+        .then((list) => Array.isArray(list) && setClassGroupsForEdit(list.map((g: { id: string; name: string }) => ({ id: g.id, name: g.name }))));
+    }
+  }, [showEditForm, id, summary?.student]);
 
   const loadSummary = useCallback(() => {
     if (!id) return;
@@ -129,23 +158,26 @@ export default function StudentPage() {
       setBlockers(MOCK_BLOCKERS.filter((b) => b.studentId === id));
       setGoals(MOCK_GOALS.filter((g) => g.studentId === id));
     }
-  }, [id]);
+  }, [id, retryCount]);
 
   async function handleRegisterLesson(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
-    const topicId = (form.elements.namedItem('topicId') as HTMLSelectElement)?.value;
+    const topicId = (form.elements.namedItem('topicId') as HTMLSelectElement)?.value?.trim();
     const heldAt = (form.elements.namedItem('heldAt') as HTMLInputElement)?.value;
     const durationMinutes = parseInt((form.elements.namedItem('durationMinutes') as HTMLInputElement)?.value || '0', 10);
     const rating = parseInt((form.elements.namedItem('rating') as HTMLSelectElement)?.value || '0', 10);
     const notes = (form.elements.namedItem('notes') as HTMLTextAreaElement)?.value?.trim() || undefined;
-    if (!topicId || !heldAt || durationMinutes < 1 || rating < 1) return;
+    setLessonError('');
+    if (!topicId) { setLessonError('Selecione o tópico.'); return; }
+    if (!heldAt) { setLessonError('Informe a data e hora da aula.'); return; }
+    if (durationMinutes < 1) { setLessonError('Duração deve ser de pelo menos 1 minuto.'); return; }
+    if (rating < 1) { setLessonError('Selecione a avaliação (1 a 5 estrelas).'); return; }
     const token = getToken();
     if (!token || isDemoMode()) {
       setLessonError('Conecte a API para registrar aulas.');
       return;
     }
-    setLessonError('');
     setLessonSuccess('');
     setLessonSubmitting(true);
     try {
@@ -166,6 +198,7 @@ export default function StudentPage() {
         return;
       }
       setLessonSuccess(`Aula registrada! +${data.xpEarned ?? 0} XP`);
+      showToast(`Aula registrada! +${data.xpEarned ?? 0} XP`);
       form.reset();
       setShowLessonForm(false);
       loadSummary();
@@ -178,35 +211,93 @@ export default function StudentPage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center p-8">
-        <p className="text-gray-400">Carregando ficha…</p>
+      <main id="main" className="min-h-screen p-8" aria-busy="true" aria-label="Carregando ficha do aluno">
+        <div className="mb-8 flex items-center justify-between">
+          <div className="flex gap-2">
+            <div className="h-4 w-16 animate-pulse rounded bg-gray-600" />
+            <div className="h-4 w-4 animate-pulse rounded bg-gray-600" />
+            <div className="h-4 w-24 animate-pulse rounded bg-gray-600" />
+          </div>
+        </div>
+        <div className="mx-auto max-w-2xl space-y-6">
+          <div className="rounded-xl border border-gray-700 bg-orbitus-card p-6">
+            <div className="mb-4 flex items-center gap-4">
+              <div className="h-16 w-16 animate-pulse rounded-full bg-gray-600" />
+              <div className="flex-1">
+                <div className="mb-2 h-6 w-32 animate-pulse rounded bg-gray-600" />
+                <div className="h-4 w-48 animate-pulse rounded bg-gray-700" />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <div className="h-6 w-20 animate-pulse rounded bg-gray-600" />
+              <div className="h-6 w-24 animate-pulse rounded bg-gray-600" />
+            </div>
+          </div>
+          <div className="rounded-xl border border-gray-700 bg-orbitus-card p-6">
+            <div className="mb-3 h-5 w-36 animate-pulse rounded bg-gray-600" />
+            <div className="space-y-2">
+              <div className="h-4 w-full animate-pulse rounded bg-gray-700" />
+              <div className="h-4 w-3/4 animate-pulse rounded bg-gray-700" />
+            </div>
+          </div>
+          <div className="rounded-xl border border-gray-700 bg-orbitus-card p-6">
+            <div className="mb-3 h-5 w-40 animate-pulse rounded bg-gray-600" />
+            <div className="h-24 w-full animate-pulse rounded bg-gray-700" />
+          </div>
+        </div>
       </main>
     );
   }
 
   if (error || !summary) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-8">
+      <main id="main" className="flex min-h-screen flex-col items-center justify-center gap-4 p-8">
         <p className="text-red-400">{error || 'Aluno não encontrado.'}</p>
-        <Link href="/roster" className="text-orbitus-accent hover:underline">
-          Voltar ao Roster
-        </Link>
+        <div className="flex flex-wrap justify-center gap-3">
+          <button
+            type="button"
+            onClick={() => { setError(''); setRetryCount((c) => c + 1); }}
+            className="rounded-lg bg-orbitus-accent px-4 py-2 font-medium text-white hover:opacity-90"
+          >
+            Tentar de novo
+          </button>
+          <Link href="/roster" className="rounded-lg border border-gray-600 px-4 py-2 text-gray-300 hover:bg-orbitus-card">
+            Voltar ao Roster
+          </Link>
+        </div>
       </main>
     );
   }
 
   const { student, lastLessons, skillBars, activeBlockersCount, activeGoalsCount } = summary;
 
+  useEffect(() => {
+    if (typeof document !== 'undefined' && student?.displayName) document.title = `Ficha de ${student.displayName} — Orbitus`;
+  }, [student?.displayName]);
+
   return (
-    <main className="min-h-screen p-8">
+    <main id="main" className="min-h-screen p-8">
       <div className="mb-8 flex items-center justify-between">
-        <Link href="/roster" className="text-orbitus-accent hover:underline">
-          ← Roster
-        </Link>
-        {isDemoMode() && (
-          <span className="rounded bg-amber-500/20 px-2 py-1 text-xs text-amber-400">Modo demo</span>
-        )}
+        <nav className="flex items-center gap-2 text-sm text-gray-400">
+          <Link href="/roster" className="text-orbitus-accent hover:underline">Roster</Link>
+          <span aria-hidden>›</span>
+          <span className="text-white">{student.displayName}</span>
+        </nav>
+        <div className="flex items-center gap-2">
+          <Link href="/roster" className="rounded-lg border border-gray-600 px-3 py-1.5 text-sm text-gray-300 hover:bg-orbitus-card">
+            ← Voltar ao Roster
+          </Link>
+          {isDemoMode() && (
+            <span className="rounded bg-amber-500/20 px-2 py-1 text-xs text-amber-400">Modo demo</span>
+          )}
+        </div>
       </div>
+
+      {toastMessage && (
+        <div className="fixed left-1/2 top-4 z-50 -translate-x-1/2 rounded-lg border border-green-500/50 bg-green-500/20 px-4 py-2 text-sm font-medium text-green-300 shadow-lg" role="status" aria-live="polite" aria-atomic="true">
+          {toastMessage}
+        </div>
+      )}
 
       <div className="mx-auto max-w-2xl space-y-8">
         <div className="rounded-xl border border-gray-700 bg-orbitus-card p-6">
@@ -224,15 +315,123 @@ export default function StudentPage() {
               </p>
             </div>
           </div>
-          <div className="flex gap-4 text-sm">
+          <div className="flex flex-wrap items-center gap-3">
             <span className="rounded bg-amber-500/20 px-2 py-1 text-amber-400">
               {activeBlockersCount} bloqueio(s) ativo(s)
             </span>
             <span className="rounded bg-blue-500/20 px-2 py-1 text-blue-400">
               {activeGoalsCount} meta(s) ativa(s)
             </span>
+            {!isDemoMode() && (
+              <button
+                type="button"
+                onClick={() => setShowEditForm((v) => !v)}
+                className="rounded bg-gray-600 px-3 py-1.5 text-sm text-gray-200 hover:bg-gray-500"
+              >
+                {showEditForm ? 'Fechar' : 'Editar dados'}
+              </button>
+            )}
           </div>
         </div>
+
+        {showEditForm && (
+          <div className="rounded-xl border border-gray-700 bg-orbitus-card p-6">
+            <h2 className="mb-4 font-semibold text-white">Editar dados do aluno</h2>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (isDemoMode() || !getToken()) return;
+                setEditError('');
+                if (!editDisplayName.trim()) {
+                  setEditError('Preencha o nome ou apelido.');
+                  return;
+                }
+                setEditSubmitting(true);
+                try {
+                  const res = await fetch(`${API_URL}/students/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+                    body: JSON.stringify({
+                      displayName: editDisplayName.trim(),
+                      fullName: editFullName.trim() || null,
+                      classGroupId: editClassGroupId.trim() || null,
+                      status: editStatus,
+                    }),
+                  });
+                  const data = await res.json();
+                  if (!res.ok) {
+                    setEditError(data.message ?? 'Erro ao atualizar.');
+                    return;
+                  }
+                  showToast('Dados atualizados!');
+                  setShowEditForm(false);
+                  loadSummary();
+                } catch {
+                  setEditError('Falha de conexão.');
+                } finally {
+                  setEditSubmitting(false);
+                }
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="mb-1 block text-sm text-gray-400">Nome ou apelido</label>
+                <input
+                  type="text"
+                  value={editDisplayName}
+                  onChange={(e) => setEditDisplayName(e.target.value)}
+                  className="w-full rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-white focus:border-orbitus-accent focus:outline-none"
+                  required
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm text-gray-400">Nome completo (opcional)</label>
+                <input
+                  type="text"
+                  value={editFullName}
+                  onChange={(e) => setEditFullName(e.target.value)}
+                  className="w-full rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-white focus:border-orbitus-accent focus:outline-none"
+                />
+              </div>
+              {classGroupsForEdit.length > 0 && (
+                <div>
+                  <label className="mb-1 block text-sm text-gray-400">Turma</label>
+                  <select
+                    value={editClassGroupId}
+                    onChange={(e) => setEditClassGroupId(e.target.value)}
+                    className="w-full rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-white focus:border-orbitus-accent focus:outline-none"
+                  >
+                    <option value="">Nenhuma</option>
+                    {classGroupsForEdit.map((g) => (
+                      <option key={g.id} value={g.id}>{g.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              <div>
+                <label className="mb-1 block text-sm text-gray-400">Status</label>
+                <select
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value)}
+                  className="w-full rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-white focus:border-orbitus-accent focus:outline-none"
+                >
+                  <option value="active">Ativo</option>
+                  <option value="inactive">Inativo</option>
+                  <option value="archived">Arquivado</option>
+                </select>
+              </div>
+              {editError && <p className="text-sm text-red-400">{editError}</p>}
+              <div className="flex gap-2">
+                <button type="submit" disabled={editSubmitting} className="rounded bg-orbitus-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50">
+                  {editSubmitting ? 'Salvando…' : 'Salvar'}
+                </button>
+                <button type="button" onClick={() => setShowEditForm(false)} className="rounded border border-gray-600 px-4 py-2 text-sm text-gray-300 hover:bg-orbitus-card">
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
 
         {/* Registrar aula */}
         <div className="rounded-xl border border-gray-700 bg-orbitus-card p-6">
@@ -316,7 +515,7 @@ export default function StudentPage() {
                 />
               </div>
               {lessonSuccess && <p className="text-sm text-green-400">{lessonSuccess}</p>}
-              {lessonError && <p className="text-sm text-red-400">{lessonError}</p>}
+              {lessonError && <p id="lesson-error" className="text-sm text-red-400" role="alert">{lessonError}</p>}
               <button
                 type="submit"
                 disabled={lessonSubmitting}
@@ -350,11 +549,13 @@ export default function StudentPage() {
                 const titleOrTopic = (form.elements.namedItem('titleOrTopic') as HTMLInputElement)?.value?.trim();
                 const severity = parseInt((form.elements.namedItem('severity') as HTMLSelectElement)?.value ?? '1', 10);
                 const observation = (form.elements.namedItem('observation') as HTMLTextAreaElement)?.value?.trim();
-                if (!titleOrTopic) return;
+                setBlockerError('');
+                if (!titleOrTopic) { setBlockerError('Preencha onde o aluno trava (título do bloqueio).'); return; }
                 if (isDemoMode()) {
                   setBlockers((prev) => [...prev, { id: `b-${Date.now()}`, studentId: id, titleOrTopic, severity, tags: [], observation: observation || null, status: 'active', createdAt: new Date().toISOString() }]);
                   setShowBlockerForm(false);
                   form.reset();
+                  showToast('Bloqueio registrado.');
                   return;
                 }
                 setBlockerError('');
@@ -368,6 +569,7 @@ export default function StudentPage() {
                   const data = await res.json();
                   if (!res.ok) { setBlockerError(data.message ?? 'Erro'); return; }
                   setBlockers((prev) => [...prev, { ...data, createdAt: data.createdAt ?? new Date().toISOString() }]);
+                  showToast('Bloqueio registrado.');
                   setShowBlockerForm(false);
                   form.reset();
                   loadSummary();
@@ -383,7 +585,7 @@ export default function StudentPage() {
                 <option value={3}>3 - Alta</option>
               </select>
               <textarea name="observation" rows={2} placeholder="Observação (opcional)" className="w-full rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-white placeholder-gray-500 focus:border-orbitus-accent focus:outline-none" />
-              {blockerError && <p className="text-sm text-red-400">{blockerError}</p>}
+              {blockerError && <p id="blocker-error" className="text-sm text-red-400" role="alert">{blockerError}</p>}
               <button type="submit" disabled={blockerSubmitting} className="rounded bg-amber-500/20 px-4 py-2 text-sm text-amber-400 disabled:opacity-50">
                 {blockerSubmitting ? 'Salvando…' : 'Salvar'}
               </button>
@@ -400,14 +602,23 @@ export default function StudentPage() {
                     <span className="ml-2 text-gray-500">sev. {b.severity}</span>
                     {b.status === 'resolved' && <span className="ml-2 rounded bg-green-500/20 px-1.5 text-xs text-green-400">resolvido</span>}
                   </div>
-                  {b.status === 'active' && !isDemoMode() && (
-                    <button type="button" onClick={async () => {
-                      const token = getToken();
-                      if (!token) return;
-                      const res = await fetch(`${API_URL}/students/${id}/blockers/${b.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ status: 'resolved' }) });
-                      if (res.ok) setBlockers((prev) => prev.map((x) => (x.id === b.id ? { ...x, status: 'resolved' as const } : x)));
-                      loadSummary();
-                    }} className="rounded bg-green-500/20 px-2 py-1 text-xs text-green-400 hover:bg-green-500/30">
+                  {b.status === 'active' && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (isDemoMode()) {
+                          setBlockers((prev) => prev.map((x) => (x.id === b.id ? { ...x, status: 'resolved' as const } : x)));
+                          showToast('Bloqueio resolvido!');
+                          return;
+                        }
+                        const token = getToken();
+                        if (!token) return;
+                        const res = await fetch(`${API_URL}/students/${id}/blockers/${b.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ status: 'resolved' }) });
+                        if (res.ok) { setBlockers((prev) => prev.map((x) => (x.id === b.id ? { ...x, status: 'resolved' as const } : x))); showToast('Bloqueio resolvido!'); }
+                        loadSummary();
+                      }}
+                      className="rounded bg-green-500/20 px-2 py-1 text-xs text-green-400 hover:bg-green-500/30"
+                    >
                       Resolver
                     </button>
                   )}
@@ -431,12 +642,14 @@ export default function StudentPage() {
                 const form = e.currentTarget;
                 const title = (form.elements.namedItem('goalTitle') as HTMLInputElement)?.value?.trim();
                 const deadline = (form.elements.namedItem('goalDeadline') as HTMLInputElement)?.value || null;
-                if (!title) return;
+                setGoalError('');
+                if (!title) { setGoalError('Preencha o título da meta.'); return; }
                 const token = getToken();
                 if (isDemoMode() || !token) {
-                  setGoals((prev) => [...prev, { id: `goal-${Date.now()}`, studentId: id, title, description: null, status: 'pending', deadlineAt: deadline, completedAt: null, createdAt: new Date().toISOString() }]);
-                  setShowGoalForm(false);
-                  form.reset();
+                setGoals((prev) => [...prev, { id: `goal-${Date.now()}`, studentId: id, title, description: null, status: 'pending', deadlineAt: deadline, completedAt: null, createdAt: new Date().toISOString() }]);
+                setShowGoalForm(false);
+                form.reset();
+                showToast('Meta adicionada.');
                   return;
                 }
                 setGoalSubmitting(true);
@@ -451,6 +664,7 @@ export default function StudentPage() {
                     setGoals((prev) => [...prev, { id: data.id, studentId: id, title, description: data.description ?? null, status: data.status ?? 'pending', deadlineAt: data.deadlineAt ?? deadline, completedAt: data.completedAt ?? null, createdAt: data.createdAt ?? new Date().toISOString() }]);
                     setShowGoalForm(false);
                     form.reset();
+                    showToast('Meta adicionada.');
                   }
                 } finally {
                   setGoalSubmitting(false);
@@ -458,8 +672,9 @@ export default function StudentPage() {
               }}
               className="mb-4 space-y-3"
             >
-              <input name="goalTitle" placeholder="Título da meta" required className="w-full rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-white placeholder-gray-500 focus:border-orbitus-accent focus:outline-none" />
+              <input name="goalTitle" placeholder="Título da meta" required className="w-full rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-white placeholder-gray-500 focus:border-orbitus-accent focus:outline-none" aria-invalid={!!goalError} aria-describedby={goalError ? 'goal-error' : undefined} />
               <input name="goalDeadline" type="date" className="w-full rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-white focus:border-orbitus-accent focus:outline-none" />
+              {goalError && <p id="goal-error" className="text-sm text-red-400" role="alert">{goalError}</p>}
               <button type="submit" disabled={goalSubmitting} className="rounded bg-blue-500/20 px-4 py-2 text-sm text-blue-400 disabled:opacity-50">Salvar</button>
             </form>
           )}
@@ -471,7 +686,22 @@ export default function StudentPage() {
                 <li key={g.id} className="flex items-center justify-between rounded-lg bg-orbitus-dark/50 px-3 py-2 text-sm">
                   <div>
                     <span className={g.status === 'completed' ? 'text-gray-500 line-through' : 'font-medium text-white'}>{g.title}</span>
-                    {g.deadlineAt && <span className="ml-2 text-gray-500">até {new Date(g.deadlineAt).toLocaleDateString('pt-BR')}</span>}
+                    {g.deadlineAt && (
+                      <>
+                        <span className="ml-2 text-gray-500">até {new Date(g.deadlineAt).toLocaleDateString('pt-BR')}</span>
+                        {g.status !== 'completed' && (() => {
+                          const deadline = new Date(g.deadlineAt);
+                          const now = new Date();
+                          now.setHours(0, 0, 0, 0);
+                          deadline.setHours(0, 0, 0, 0);
+                          const daysLeft = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                          if (daysLeft < 0) return <span className="ml-2 rounded bg-red-500/20 px-1.5 py-0.5 text-xs text-red-400">Atrasado</span>;
+                          if (daysLeft === 0) return <span className="ml-2 rounded bg-amber-500/20 px-1.5 py-0.5 text-xs text-amber-400">Prazo hoje</span>;
+                          if (daysLeft <= 3) return <span className="ml-2 rounded bg-amber-500/20 px-1.5 py-0.5 text-xs text-amber-400">Prazo em {daysLeft} dia(s)</span>;
+                          return null;
+                        })()}
+                      </>
+                    )}
                     <span className={`ml-2 rounded px-1.5 py-0.5 text-xs ${g.status === 'completed' ? 'bg-green-500/20 text-green-400' : g.status === 'in_progress' ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-500/20 text-gray-400'}`}>{g.status === 'completed' ? 'concluída' : g.status === 'in_progress' ? 'em andamento' : 'pendente'}</span>
                   </div>
                   {g.status !== 'completed' && (
@@ -490,7 +720,7 @@ export default function StudentPage() {
                                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
                                 body: JSON.stringify({ status: 'in_progress' }),
                               });
-                              if (res.ok) setGoals((prev) => prev.map((x) => (x.id === g.id ? { ...x, status: 'in_progress' as const } : x)));
+                              if (res.ok) { setGoals((prev) => prev.map((x) => (x.id === g.id ? { ...x, status: 'in_progress' as const } : x))); showToast('Meta em andamento.'); }
                             } catch {}
                           }}
                           className="rounded bg-blue-500/20 px-2 py-1 text-xs text-blue-400 hover:bg-blue-500/30"
@@ -501,17 +731,19 @@ export default function StudentPage() {
                       <button
                         type="button"
                         onClick={async () => {
+                          if (typeof window !== 'undefined' && !window.confirm('Marcar esta meta como concluída?')) return;
                           if (isDemoMode() || !getToken()) {
                             setGoals((prev) => prev.map((x) => (x.id === g.id ? { ...x, status: 'completed' as const, completedAt: new Date().toISOString() } : x)));
-                            return;
-                          }
-                          try {
-                            const res = await fetch(`${API_URL}/students/${id}/goals/${g.id}`, {
+                            showToast('Meta concluída!');
+                          return;
+                        }
+                        try {
+                          const res = await fetch(`${API_URL}/students/${id}/goals/${g.id}`, {
                               method: 'PATCH',
                               headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
                               body: JSON.stringify({ status: 'completed' }),
                             });
-                            if (res.ok) setGoals((prev) => prev.map((x) => (x.id === g.id ? { ...x, status: 'completed' as const, completedAt: new Date().toISOString() } : x)));
+                            if (res.ok) { setGoals((prev) => prev.map((x) => (x.id === g.id ? { ...x, status: 'completed' as const, completedAt: new Date().toISOString() } : x))); showToast('Meta concluída!'); }
                           } catch {}
                         }}
                         className="rounded bg-green-500/20 px-2 py-1 text-xs text-green-400 hover:bg-green-500/30"
