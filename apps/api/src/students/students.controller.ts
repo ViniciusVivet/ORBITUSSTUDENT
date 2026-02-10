@@ -19,9 +19,12 @@ import { RegisterLessonDto } from './dto/register-lesson.dto';
 import { AddBlockerDto } from './dto/add-blocker.dto';
 import { ListBlockersQuery } from './queries/list-blockers.query';
 import { ListGoalsQuery } from './queries/list-goals.query';
+import { ListClassGroupsQuery } from './queries/list-class-groups.query';
 import { CreateGoalCommand } from './commands/create-goal.command';
 import { UpdateGoalCommand } from './commands/update-goal.command';
 import { CreateGoalDto } from './dto/create-goal.dto';
+import { UpdateStudentDto } from './dto/update-student.dto';
+import { UpdateStudentCommand } from './commands/update-student.command';
 
 @ApiTags('students')
 @ApiBearerAuth()
@@ -40,6 +43,12 @@ export class StudentsController {
     return this.queryBus.execute(new ListTopicsQuery());
   }
 
+  @Get('class-groups')
+  @ApiOperation({ summary: 'Listar turmas (para cadastro e filtros)' })
+  async listClassGroups(@CurrentUser() user: JwtPayload) {
+    return this.queryBus.execute(new ListClassGroupsQuery(user.id));
+  }
+
   @Get()
   @ApiOperation({ summary: 'Listar alunos' })
   async list(
@@ -47,11 +56,13 @@ export class StudentsController {
     @Query('search') search?: string,
     @Query('classGroupId') classGroupId?: string,
     @Query('status') status?: string,
+    @Query('noLessonSinceDays') noLessonSinceDays?: number,
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
   ) {
+    const days = noLessonSinceDays != null ? Number(noLessonSinceDays) : undefined;
     return this.queryBus.execute(
-      new ListStudentsQuery(user.id, search, classGroupId, status, limit, offset),
+      new ListStudentsQuery(user.id, search, classGroupId, status, days, limit, offset),
     );
   }
 
@@ -78,6 +89,24 @@ export class StudentsController {
         classGroupId: dto.classGroupId,
         avatarType: dto.avatarType,
         avatarValue: dto.avatarValue,
+      }),
+    );
+  }
+
+  @Patch(':id')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Atualizar dados do aluno' })
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateStudentDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.commandBus.execute(
+      new UpdateStudentCommand(id, user.id, {
+        displayName: dto.displayName,
+        fullName: dto.fullName,
+        classGroupId: dto.classGroupId,
+        status: dto.status,
       }),
     );
   }

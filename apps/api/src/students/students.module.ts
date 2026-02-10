@@ -7,7 +7,9 @@ import { GetStudentSummaryHandler } from './queries/get-student-summary.handler'
 import { ListTopicsHandler } from './queries/list-topics.handler';
 import { ListBlockersHandler } from './queries/list-blockers.handler';
 import { ListGoalsHandler } from './queries/list-goals.handler';
+import { ListClassGroupsHandler } from './queries/list-class-groups.handler';
 import { CreateStudentHandler } from './commands/create-student.handler';
+import { UpdateStudentHandler } from './commands/update-student.handler';
 import { RegisterLessonHandler } from './commands/register-lesson.handler';
 import { AddBlockerHandler } from './commands/add-blocker.handler';
 import { UpdateBlockerHandler } from './commands/update-blocker.handler';
@@ -21,9 +23,11 @@ const QueryHandlers = [
   ListTopicsHandler,
   ListBlockersHandler,
   ListGoalsHandler,
+  ListClassGroupsHandler,
 ];
 const CommandHandlers = [
   CreateStudentHandler,
+  UpdateStudentHandler,
   RegisterLessonHandler,
   AddBlockerHandler,
   UpdateBlockerHandler,

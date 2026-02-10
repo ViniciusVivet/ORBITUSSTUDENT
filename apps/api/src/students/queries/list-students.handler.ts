@@ -7,7 +7,7 @@ export class ListStudentsHandler implements IQueryHandler<ListStudentsQuery> {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(query: ListStudentsQuery) {
-    const { teacherUserId, search, classGroupId, status, limit = 50, offset = 0 } = query;
+    const { teacherUserId, search, classGroupId, status, noLessonSinceDays, limit = 50, offset = 0 } = query;
     const where: Record<string, unknown> = { teacherUserId };
     if (classGroupId) where.classGroupId = classGroupId;
     if (status) where.status = status;
@@ -16,6 +16,17 @@ export class ListStudentsHandler implements IQueryHandler<ListStudentsQuery> {
         { displayName: { contains: search.trim(), mode: 'insensitive' } },
         { fullName: { contains: search.trim(), mode: 'insensitive' } },
       ];
+    }
+    if (noLessonSinceDays != null && noLessonSinceDays > 0) {
+      const since = new Date();
+      since.setDate(since.getDate() - noLessonSinceDays);
+      const withRecentLesson = await this.prisma.lesson.findMany({
+        where: { heldAt: { gte: since } },
+        select: { studentId: true },
+        distinct: ['studentId'],
+      });
+      const idsWithLesson = withRecentLesson.map((l) => l.studentId);
+      where.id = { notIn: idsWithLesson };
     }
     const [students, total] = await Promise.all([
       this.prisma.student.findMany({
