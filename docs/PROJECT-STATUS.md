@@ -64,7 +64,7 @@ No modo demo **nada é enviado ao servidor**. Os dados vêm de `apps/web/src/lib
 | Listar bloqueios (GET /students/:id/blockers) | ✅ |
 | Criar bloqueio (POST /students/:id/blockers) | ✅ |
 | Atualizar bloqueio/resolver (PATCH .../blockers/:blockerId) | ✅ |
-| Metas (goals) CRUD | ❌ planejado |
+| Listar/criar/atualizar metas (GET/POST/PATCH .../goals) | ✅ |
 
 ---
 

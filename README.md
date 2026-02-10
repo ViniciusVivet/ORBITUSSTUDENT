@@ -10,6 +10,55 @@
 
 ---
 
+## 📁 Estrutura do projeto
+
+```
+OrbitusStudent/
+├── apps/
+│   ├── api/                    # Backend NestJS (CQRS, Prisma, JWT)
+│   │   ├── prisma/             # schema.prisma, seed
+│   │   └── src/
+│   │       ├── auth/           # login JWT, guards, roles
+│   │       ├── common/         # decorators, filters, guards
+│   │       ├── dashboard/     # overview (métricas)
+│   │       ├── prisma/        # PrismaModule, PrismaService
+│   │       └── students/      # CRUD, lessons, blockers, goals (commands/queries)
+│   └── web/                    # Frontend Next.js 14
+│       └── src/
+│           ├── app/            # rotas: /, /login, /roster, /dashboard, /students/[id], /students/new
+│           ├── components/     # StudentModal, DemoBadge
+│           └── lib/            # mock-data.ts (modo demo)
+├── packages/
+│   └── shared/                 # Tipos e DTOs compartilhados
+├── docs/                       # SPEC, PROJECT-STATUS, schema de referência
+├── docker-compose.yml          # Postgres
+├── package.json                # scripts raiz (dev:api, dev:web, db:*)
+└── pnpm-workspace.yaml
+```
+
+---
+
+## ✅ O que já está implementado
+
+| Área | Recursos |
+|------|----------|
+| **Frontend** | Login, modo demo, Roster com busca/filtros e setas, modal do aluno (HUD, barras, últimas aulas), ficha (aula, bloqueios, metas, timeline), cadastro de aluno com avatares, dashboard, logout, responsivo e reduced-motion. |
+| **Backend** | Auth JWT, CRUD de alunos, resumo e summary, tópicos, registrar aula (XP/habilidades), dashboard overview, bloqueios (listar/criar/resolver), metas (listar/criar/atualizar status). |
+| **Infra** | Monorepo pnpm, Prisma + PostgreSQL, Docker Compose para o banco, Swagger em `/api/docs`. |
+
+---
+
+## 🔜 O que ainda falta (roadmap)
+
+| Item | Descrição |
+|------|-----------|
+| **Avatar 3D no modal** | Renderização 3D (ex.: R3F) no modal do aluno, com fallback 2D. |
+| **V2 (especificação)** | PWA, sync offline, Insights IA no dashboard. |
+
+Detalhes em [docs/SPEC-ORBITUS-CLASSROOM-RPG.md](docs/SPEC-ORBITUS-CLASSROOM-RPG.md) e [docs/PROJECT-STATUS.md](docs/PROJECT-STATUS.md).
+
+---
+
 ## 🎮 Testar sem API (modo demo)
 
 Você pode ver toda a interface **sem instalar PostgreSQL nem subir a API**:
