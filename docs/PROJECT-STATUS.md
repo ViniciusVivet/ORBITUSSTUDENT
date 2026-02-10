@@ -46,6 +46,15 @@ No modo demo **nada é enviado ao servidor**. Os dados vêm de `apps/web/src/lib
 | **Badge "Modo demo"** (canto da tela) | — | ✅ |
 | **Modal responsivo** e **prefers-reduced-motion** | ✅ | ✅ |
 | Navegação (Roster, Dashboard, Início, Sair) | ✅ | ✅ |
+| **Roster lê classGroupId da URL** (link "Ver alunos" do Dashboard) | ✅ | ✅ |
+| **Paginação / "Carregar mais"** no Roster (API limit/offset; demo displayCount) | ✅ | ✅ |
+| **Mensagens de validação** claras (cadastro, aula, bloqueio, meta, editar dados) | ✅ | ✅ |
+| **Loading skeleton** (Roster e ficha do aluno) | ✅ | ✅ |
+| **Toast acessível** (aria-live), **focus trap** no modal, **Escape** fecha modal | ✅ | ✅ |
+| **Debounce** na busca do Roster (API) | ✅ | — |
+| **Error boundary** (Tentar de novo, Início, Roster) | ✅ | ✅ |
+| **"Tentar de novo"** em falha (Roster e ficha) | ✅ | ✅ |
+| **Empty state** no Dashboard (quando métricas zeradas) | ✅ | ✅ |
 
 ---
 
@@ -65,6 +74,12 @@ No modo demo **nada é enviado ao servidor**. Os dados vêm de `apps/web/src/lib
 | Criar bloqueio (POST /students/:id/blockers) | ✅ |
 | Atualizar bloqueio/resolver (PATCH .../blockers/:blockerId) | ✅ |
 | Listar/criar/atualizar metas (GET/POST/PATCH .../goals) | ✅ |
+| Listar turmas (GET /students/class-groups) | ✅ |
+| Atualizar aluno (PATCH /students/:id) | ✅ |
+| Dashboard por turma (GET /dashboard/by-class) | ✅ |
+| Listar alunos com filtro "sem aula há X dias" (GET /students?noLessonSinceDays=7) | ✅ |
+| Listar alunos com limit/offset (paginação) | ✅ |
+| Módulo AI (GET /ai/status, GET /ai/insights, POST /ai/chat) | ✅ |
 
 ---
 
@@ -89,14 +104,28 @@ Ou seja: o mesmo frontend funciona em **modo demo (só mocks)** ou **com API e b
 
 ---
 
+## Assistente IA (Gemini)
+
+- **Backend:** módulo `ai` com contexto completo do app (descrição, stack, funcionalidades, modelo de dados, roadmap). Endpoints: `GET /ai/status`, `POST /ai/chat`, `GET /ai/insights`. Requer `GEMINI_API_KEY` no `.env` da API (chave em [aistudio.google.com/apikey](https://aistudio.google.com/apikey)).
+- **Frontend:** no Dashboard: card **Insights IA** (sugestões automáticas) e **Assistente IA (chat)** para perguntas em linguagem natural e sugestões de melhorias. Em modo demo ou sem API key, as seções indicam que é preciso conectar a API e configurar a chave.
+
+---
+
 ## Próximos passos sugeridos (especificação)
 
 Conforme o **docs/SPEC-ORBITUS-CLASSROOM-RPG.md**:
 
-1. **Metas (goals)** — API CRUD (GET/POST/PATCH /students/:id/goals) quando for usar banco; front já tem lista/form em mock.
-2. **Avatar 3D** no modal (R3F) e fallback 2D.
-3. V2: PWA, sync, Insights IA.
+1. **Avatar 3D** no modal (R3F) e fallback 2D.
+2. V2: PWA, sync, mais insights automáticos.
 
 ---
 
-*Última atualização: fev/2025 — metas, busca/filtros, setas, ações no modal, timeline, avatares, badge demo, responsivo, reduced motion; doc atualizado.*
+---
+
+## Documentação de rotas e conexão
+
+Todas as **rotas do frontend** e **endpoints da API** estão mapeados em [docs/ROUTES-AND-API.md](ROUTES-AND-API.md). Frontend e API estão totalmente conectados; variáveis de ambiente em `apps/api/.env.example` e `apps/web/.env.example`.
+
+---
+
+*Última atualização: fev/2025 — round 2 e 3 (paginação, validação, skeleton, debounce, error boundary, retry, empty state, focus trap, toast acessível); doc atualizado.*
