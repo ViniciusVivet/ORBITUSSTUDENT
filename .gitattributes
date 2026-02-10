@@ -1,0 +1,10 @@
+# Garante UTF-8 e line endings consistentes (evita acentos/encoding bugados no GitHub)
+* text=auto eol=lf
+*.md text
+*.ts text
+*.tsx text
+*.js text
+*.json text
+*.yml text
+*.yaml text
+*.prisma text
