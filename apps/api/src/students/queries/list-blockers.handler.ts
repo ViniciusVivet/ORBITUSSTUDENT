@@ -13,7 +13,7 @@ export class ListBlockersHandler implements IQueryHandler<ListBlockersQuery> {
     });
     if (!student) throw new NotFoundException('Aluno não encontrado');
 
-    const where: { studentId: string; status?: string } = { studentId: query.studentId };
+    const where: { studentId: string; status?: 'active' | 'resolved' } = { studentId: query.studentId };
     if (query.status) where.status = query.status as 'active' | 'resolved';
 
     return this.prisma.blocker.findMany({

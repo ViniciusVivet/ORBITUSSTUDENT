@@ -13,7 +13,7 @@ export class ListGoalsHandler implements IQueryHandler<ListGoalsQuery> {
     });
     if (!student) throw new NotFoundException('Aluno não encontrado');
 
-    const where: { studentId: string; status?: string } = { studentId: query.studentId };
+    const where: { studentId: string; status?: 'pending' | 'in_progress' | 'completed' } = { studentId: query.studentId };
     if (query.status) where.status = query.status as 'pending' | 'in_progress' | 'completed';
 
     return this.prisma.goal.findMany({
