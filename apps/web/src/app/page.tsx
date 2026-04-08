@@ -17,7 +17,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <main id="main" className="flex min-h-screen flex-col items-center justify-center p-8">
+    <main id="main" className="page-shell flex flex-col items-center justify-center">
       <h1 className="mb-4 text-3xl font-bold text-orbitus-accent">
         Orbitus Classroom RPG
       </h1>
@@ -27,51 +27,51 @@ export default function HomePage() {
       {loggedIn ? (
         <>
           <p className="mb-6 text-gray-300">Você já está conectado.</p>
-          <div className="flex flex-wrap justify-center gap-4">
+          <div className="flex w-full max-w-md flex-col gap-3 touch-manipulation sm:max-w-none sm:flex-row sm:flex-wrap sm:justify-center sm:gap-4">
             <Link
               href="/roster"
-              className="rounded-lg bg-orbitus-accent px-6 py-3 font-medium text-white transition hover:opacity-90"
+              className="inline-flex min-h-12 items-center justify-center rounded-lg bg-orbitus-accent px-6 py-3 font-medium text-white transition hover:opacity-90 sm:min-h-0"
             >
               Roster
             </Link>
             <Link
               href="/dashboard"
-              className="rounded-lg border border-orbitus-accent px-6 py-3 font-medium text-orbitus-accent transition hover:bg-orbitus-accent/10"
+              className="inline-flex min-h-12 items-center justify-center rounded-lg border border-orbitus-accent px-6 py-3 font-medium text-orbitus-accent transition hover:bg-orbitus-accent/10 sm:min-h-0"
             >
               Dashboard
             </Link>
             <Link
               href="/students/new"
-              className="rounded-lg border border-gray-600 px-6 py-3 font-medium text-gray-300 transition hover:bg-orbitus-card"
+              className="inline-flex min-h-12 items-center justify-center rounded-lg border border-gray-600 px-6 py-3 font-medium text-gray-300 transition hover:bg-orbitus-card sm:min-h-0"
             >
               Cadastrar aluno
             </Link>
             <button
               type="button"
               onClick={() => { logout(); setLoggedIn(false); }}
-              className="rounded-lg border border-red-500/50 px-6 py-3 font-medium text-red-400 transition hover:bg-red-500/10"
+              className="min-h-12 rounded-lg border border-red-500/50 px-6 py-3 font-medium text-red-400 transition hover:bg-red-500/10 sm:min-h-0"
             >
               Sair
             </button>
           </div>
         </>
       ) : (
-        <div className="flex flex-wrap justify-center gap-4">
+        <div className="flex w-full max-w-md flex-col gap-3 touch-manipulation sm:max-w-none sm:flex-row sm:flex-wrap sm:justify-center sm:gap-4">
           <Link
             href="/login"
-            className="rounded-lg bg-orbitus-accent px-6 py-3 font-medium text-white transition hover:opacity-90"
+            className="inline-flex min-h-12 items-center justify-center rounded-lg bg-orbitus-accent px-6 py-3 font-medium text-white transition hover:opacity-90 sm:min-h-0"
           >
             Entrar
           </Link>
           <Link
             href="/roster"
-            className="rounded-lg border border-orbitus-accent px-6 py-3 font-medium text-orbitus-accent transition hover:bg-orbitus-accent/10"
+            className="inline-flex min-h-12 items-center justify-center rounded-lg border border-orbitus-accent px-6 py-3 font-medium text-orbitus-accent transition hover:bg-orbitus-accent/10 sm:min-h-0"
           >
             Ver alunos (Roster)
           </Link>
           <Link
             href="/dashboard"
-            className="rounded-lg border border-gray-600 px-6 py-3 font-medium text-gray-300 transition hover:bg-orbitus-card"
+            className="inline-flex min-h-12 items-center justify-center rounded-lg border border-gray-600 px-6 py-3 font-medium text-gray-300 transition hover:bg-orbitus-card sm:min-h-0"
           >
             Dashboard
           </Link>

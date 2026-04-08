@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Conteúdo principal: menos padding no celular, igual ao desktop a partir de lg */
+@layer components {
+  .page-shell {
+    @apply min-h-screen px-4 pb-8 pt-4 sm:px-5 sm:pt-5 lg:px-8 lg:pt-8;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -9,5 +16,54 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* Ficha do aluno: leitura em papel / PDF (window.print) */
+@media print {
+  body {
+    background: #fff !important;
+  }
+
+  main[data-print-sheet] {
+    min-height: auto !important;
+    padding: 1rem 1.25rem !important;
+    background: #fff !important;
+    color: #111 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  main[data-print-sheet] .print-sheet-card {
+    background: #fff !important;
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    color: #111 !important;
+  }
+
+  main[data-print-sheet] .print-sheet-card h1,
+  main[data-print-sheet] .print-sheet-card h2 {
+    color: #111 !important;
+  }
+
+  main[data-print-sheet] .print-sheet-muted {
+    color: #444 !important;
+  }
+
+  main[data-print-sheet] .print-sheet-row {
+    background: #f5f5f5 !important;
+    border: 1px solid #e5e5e5 !important;
+    color: #111 !important;
+  }
+
+  main[data-print-sheet] .text-orbitus-xp {
+    color: #b45309 !important;
+  }
+
+  main[data-print-sheet] a {
+    color: #111 !important;
+    text-decoration: none !important;
   }
 }

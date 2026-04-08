@@ -6,14 +6,18 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
+    "@orbitus/shared": "workspace:*",
+    "@react-three/fiber": "^8.18.0",
+    "framer-motion": "^11.0.3",
     "next": "14.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "framer-motion": "^11.0.3",
-    "@orbitus/shared": "workspace:*"
+    "three": "^0.169.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
@@ -22,6 +26,7 @@
     "autoprefixer": "^10.4.17",
     "postcss": "^8.4.33",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vitest": "^1.6.0"
   }
 }

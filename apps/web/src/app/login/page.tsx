@@ -54,8 +54,8 @@ export default function LoginPage() {
   }
 
   return (
-    <main id="main" className="flex min-h-screen flex-col items-center justify-center p-8">
-      <div className="w-full max-w-sm rounded-xl bg-orbitus-card p-8 shadow-xl">
+    <main id="main" className="page-shell flex flex-col items-center justify-center pb-[max(2rem,env(safe-area-inset-bottom))]">
+      <div className="w-full max-w-sm rounded-xl bg-orbitus-card p-6 shadow-xl sm:p-8">
         <h1 className="mb-6 text-center text-2xl font-bold text-orbitus-accent">
           Entrar
         </h1>

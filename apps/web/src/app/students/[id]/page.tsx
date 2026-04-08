@@ -13,6 +13,14 @@ function getToken(): string | null {
   return localStorage.getItem('token');
 }
 
+function parseBlockerTagsInput(raw: string): string[] {
+  return raw
+    .split(/[,;]/)
+    .map((t) => t.trim())
+    .filter(Boolean)
+    .slice(0, 24);
+}
+
 interface TopicOption {
   id: string;
   name: string;
@@ -41,6 +49,8 @@ export default function StudentPage() {
   const [showBlockerForm, setShowBlockerForm] = useState(false);
   const [blockerSubmitting, setBlockerSubmitting] = useState(false);
   const [blockerError, setBlockerError] = useState('');
+  const [blockerQuickEditId, setBlockerQuickEditId] = useState<string | null>(null);
+  const [blockerPatchingId, setBlockerPatchingId] = useState<string | null>(null);
   const [goals, setGoals] = useState<GoalItem[]>([]);
   const [showGoalForm, setShowGoalForm] = useState(false);
   const [goalSubmitting, setGoalSubmitting] = useState(false);
@@ -211,7 +221,7 @@ export default function StudentPage() {
 
   if (loading) {
     return (
-      <main id="main" className="min-h-screen p-8" aria-busy="true" aria-label="Carregando ficha do aluno">
+      <main id="main" className="page-shell" aria-busy="true" aria-label="Carregando ficha do aluno">
         <div className="mb-8 flex items-center justify-between">
           <div className="flex gap-2">
             <div className="h-4 w-16 animate-pulse rounded bg-gray-600" />
@@ -253,15 +263,18 @@ export default function StudentPage() {
     return (
       <main id="main" className="flex min-h-screen flex-col items-center justify-center gap-4 p-8">
         <p className="text-red-400">{error || 'Aluno não encontrado.'}</p>
-        <div className="flex flex-wrap justify-center gap-3">
+        <div className="flex w-full max-w-xs flex-col gap-3 touch-manipulation sm:max-w-none sm:flex-row sm:flex-wrap sm:justify-center">
           <button
             type="button"
             onClick={() => { setError(''); setRetryCount((c) => c + 1); }}
-            className="rounded-lg bg-orbitus-accent px-4 py-2 font-medium text-white hover:opacity-90"
+            className="min-h-11 rounded-lg bg-orbitus-accent px-4 py-2.5 font-medium text-white hover:opacity-90 sm:min-h-0 sm:py-2"
           >
             Tentar de novo
           </button>
-          <Link href="/roster" className="rounded-lg border border-gray-600 px-4 py-2 text-gray-300 hover:bg-orbitus-card">
+          <Link
+            href="/roster"
+            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-600 px-4 py-2.5 text-gray-300 hover:bg-orbitus-card sm:min-h-0 sm:py-2"
+          >
             Voltar ao Roster
           </Link>
         </div>
@@ -275,16 +288,37 @@ export default function StudentPage() {
     if (typeof document !== 'undefined' && student?.displayName) document.title = `Ficha de ${student.displayName} — Orbitus`;
   }, [student?.displayName]);
 
+  const generatedAtLabel = new Date().toLocaleString('pt-BR', {
+    dateStyle: 'long',
+    timeStyle: 'short',
+  });
+
   return (
-    <main id="main" className="min-h-screen p-8">
-      <div className="mb-8 flex items-center justify-between">
-        <nav className="flex items-center gap-2 text-sm text-gray-400">
+    <main id="main" data-print-sheet className="page-shell">
+      <div className="mb-6 hidden print:block">
+        <p className="text-xs font-medium uppercase tracking-wide text-gray-600">Orbitus Classroom RPG</p>
+        <h1 className="mt-1 text-2xl font-bold text-gray-900">{student.displayName}</h1>
+        <p className="mt-1 text-sm text-gray-600">Ficha do aluno · gerada em {generatedAtLabel}</p>
+      </div>
+
+      <div className="mb-8 flex flex-col gap-4 print:hidden sm:flex-row sm:items-center sm:justify-between">
+        <nav className="flex min-w-0 flex-wrap items-center gap-2 text-sm text-gray-400" aria-label="Trilha">
           <Link href="/roster" className="text-orbitus-accent hover:underline">Roster</Link>
           <span aria-hidden>›</span>
-          <span className="text-white">{student.displayName}</span>
+          <span className="truncate text-white">{student.displayName}</span>
         </nav>
-        <div className="flex items-center gap-2">
-          <Link href="/roster" className="rounded-lg border border-gray-600 px-3 py-1.5 text-sm text-gray-300 hover:bg-orbitus-card">
+        <div className="flex flex-wrap items-stretch gap-2 touch-manipulation sm:items-center sm:justify-end">
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="min-h-10 rounded-lg border border-gray-600 px-3 py-2 text-sm text-gray-300 hover:bg-orbitus-card sm:min-h-0 sm:py-1.5"
+          >
+            Imprimir ficha
+          </button>
+          <Link
+            href="/roster"
+            className="inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-600 px-3 py-2 text-sm text-gray-300 hover:bg-orbitus-card sm:min-h-0 sm:py-1.5"
+          >
             ← Voltar ao Roster
           </Link>
           {isDemoMode() && (
@@ -294,24 +328,32 @@ export default function StudentPage() {
       </div>
 
       {toastMessage && (
-        <div className="fixed left-1/2 top-4 z-50 -translate-x-1/2 rounded-lg border border-green-500/50 bg-green-500/20 px-4 py-2 text-sm font-medium text-green-300 shadow-lg" role="status" aria-live="polite" aria-atomic="true">
+        <div className="fixed left-1/2 top-4 z-50 -translate-x-1/2 rounded-lg border border-green-500/50 bg-green-500/20 px-4 py-2 text-sm font-medium text-green-300 shadow-lg print:hidden" role="status" aria-live="polite" aria-atomic="true">
           {toastMessage}
         </div>
       )}
 
       <div className="mx-auto max-w-2xl space-y-8">
-        <div className="rounded-xl border border-gray-700 bg-orbitus-card p-6">
+        <div className="print-sheet-card rounded-xl border border-gray-700 bg-orbitus-card p-6">
           <div className="mb-4 flex items-center gap-4">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-orbitus-accent/20 text-3xl">
               {student.avatarType === 'emoji' ? student.avatarValue : '🧑‍🎓'}
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">{student.displayName}</h1>
+              <h1 className="text-2xl font-bold text-white print:hidden">{student.displayName}</h1>
               {student.fullName && (
-                <p className="text-gray-400">{student.fullName}</p>
+                <p className="print-sheet-muted text-gray-400">{student.fullName}</p>
               )}
               <p className="text-sm text-orbitus-xp">
                 Nível {student.level} · XP {student.xp}
+              </p>
+              {student.classGroup?.name && (
+                <p className="print-sheet-muted mt-1 text-sm text-gray-400">
+                  Turma: {student.classGroup.name}
+                </p>
+              )}
+              <p className="print-sheet-muted mt-1 text-sm text-gray-400">
+                Status: {student.status}
               </p>
             </div>
           </div>
@@ -326,7 +368,7 @@ export default function StudentPage() {
               <button
                 type="button"
                 onClick={() => setShowEditForm((v) => !v)}
-                className="rounded bg-gray-600 px-3 py-1.5 text-sm text-gray-200 hover:bg-gray-500"
+                className="rounded bg-gray-600 px-3 py-1.5 text-sm text-gray-200 hover:bg-gray-500 print:hidden"
               >
                 {showEditForm ? 'Fechar' : 'Editar dados'}
               </button>
@@ -335,7 +377,7 @@ export default function StudentPage() {
         </div>
 
         {showEditForm && (
-          <div className="rounded-xl border border-gray-700 bg-orbitus-card p-6">
+          <div className="rounded-xl border border-gray-700 bg-orbitus-card p-6 print:hidden">
             <h2 className="mb-4 font-semibold text-white">Editar dados do aluno</h2>
             <form
               onSubmit={async (e) => {
@@ -434,7 +476,7 @@ export default function StudentPage() {
         )}
 
         {/* Registrar aula */}
-        <div className="rounded-xl border border-gray-700 bg-orbitus-card p-6">
+        <div className="rounded-xl border border-gray-700 bg-orbitus-card p-6 print:hidden">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-semibold text-white">Registrar aula</h2>
             {!showLessonForm ? (
@@ -530,13 +572,13 @@ export default function StudentPage() {
           )}
         </div>
 
-        <div className="rounded-xl border border-gray-700 bg-orbitus-card p-6">
+        <div className="print-sheet-card rounded-xl border border-gray-700 bg-orbitus-card p-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-semibold text-white">Bloqueios</h2>
             <button
               type="button"
               onClick={() => setShowBlockerForm((v) => !v)}
-              className="rounded bg-amber-500/20 px-3 py-1.5 text-sm font-medium text-amber-400 hover:bg-amber-500/30"
+              className="rounded bg-amber-500/20 px-3 py-1.5 text-sm font-medium text-amber-400 hover:bg-amber-500/30 print:hidden"
             >
               {showBlockerForm ? 'Fechar' : 'Marcar bloqueio'}
             </button>
@@ -549,10 +591,11 @@ export default function StudentPage() {
                 const titleOrTopic = (form.elements.namedItem('titleOrTopic') as HTMLInputElement)?.value?.trim();
                 const severity = parseInt((form.elements.namedItem('severity') as HTMLSelectElement)?.value ?? '1', 10);
                 const observation = (form.elements.namedItem('observation') as HTMLTextAreaElement)?.value?.trim();
+                const tags = parseBlockerTagsInput((form.elements.namedItem('tagsInput') as HTMLInputElement)?.value ?? '');
                 setBlockerError('');
                 if (!titleOrTopic) { setBlockerError('Preencha onde o aluno trava (título do bloqueio).'); return; }
                 if (isDemoMode()) {
-                  setBlockers((prev) => [...prev, { id: `b-${Date.now()}`, studentId: id, titleOrTopic, severity, tags: [], observation: observation || null, status: 'active', createdAt: new Date().toISOString() }]);
+                  setBlockers((prev) => [...prev, { id: `b-${Date.now()}`, studentId: id, titleOrTopic, severity, tags, observation: observation || null, status: 'active', createdAt: new Date().toISOString() }]);
                   setShowBlockerForm(false);
                   form.reset();
                   showToast('Bloqueio registrado.');
@@ -564,7 +607,12 @@ export default function StudentPage() {
                   const res = await fetch(`${API_URL}/students/${id}/blockers`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
-                    body: JSON.stringify({ titleOrTopic, severity, observation: observation || undefined }),
+                    body: JSON.stringify({
+                      titleOrTopic,
+                      severity,
+                      tags: tags.length ? tags : undefined,
+                      observation: observation || undefined,
+                    }),
                   });
                   const data = await res.json();
                   if (!res.ok) { setBlockerError(data.message ?? 'Erro'); return; }
@@ -576,7 +624,7 @@ export default function StudentPage() {
                 } catch { setBlockerError('Falha de conexão'); }
                 finally { setBlockerSubmitting(false); }
               }}
-              className="mb-4 space-y-3"
+              className="mb-4 space-y-3 print:hidden"
             >
               <input name="titleOrTopic" placeholder="Onde trava?" required className="w-full rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-white placeholder-gray-500 focus:border-orbitus-accent focus:outline-none" />
               <select name="severity" defaultValue="2" className="w-full rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-white focus:border-orbitus-accent focus:outline-none">
@@ -585,6 +633,15 @@ export default function StudentPage() {
                 <option value={3}>3 - Alta</option>
               </select>
               <textarea name="observation" rows={2} placeholder="Observação (opcional)" className="w-full rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-white placeholder-gray-500 focus:border-orbitus-accent focus:outline-none" />
+              <div>
+                <label className="mb-1 block text-sm text-gray-400">Tags (opcional)</label>
+                <input
+                  name="tagsInput"
+                  type="text"
+                  placeholder="ex.: lógica, sintaxe — separadas por vírgula"
+                  className="w-full rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-orbitus-accent focus:outline-none"
+                />
+              </div>
               {blockerError && <p id="blocker-error" className="text-sm text-red-400" role="alert">{blockerError}</p>}
               <button type="submit" disabled={blockerSubmitting} className="rounded bg-amber-500/20 px-4 py-2 text-sm text-amber-400 disabled:opacity-50">
                 {blockerSubmitting ? 'Salvando…' : 'Salvar'}
@@ -594,33 +651,157 @@ export default function StudentPage() {
           {blockers.length === 0 ? (
             <p className="text-gray-500">Nenhum bloqueio registrado.</p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {blockers.map((b) => (
-                <li key={b.id} className="flex items-center justify-between rounded-lg bg-orbitus-dark/50 px-3 py-2 text-sm">
-                  <div>
-                    <span className="font-medium text-white">{b.titleOrTopic}</span>
-                    <span className="ml-2 text-gray-500">sev. {b.severity}</span>
-                    {b.status === 'resolved' && <span className="ml-2 rounded bg-green-500/20 px-1.5 text-xs text-green-400">resolvido</span>}
+                <li key={b.id} className="print-sheet-row rounded-lg bg-orbitus-dark/50 px-3 py-2 text-sm">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0 flex-1">
+                      <div>
+                        <span className="font-medium text-white">{b.titleOrTopic}</span>
+                        <span className="print-sheet-muted ml-2 text-gray-500">sev. {b.severity}</span>
+                        {b.status === 'resolved' && (
+                          <span className="ml-2 rounded bg-green-500/20 px-1.5 text-xs text-green-400">resolvido</span>
+                        )}
+                      </div>
+                      {(b.tags?.length ?? 0) > 0 && (
+                        <div className="mt-1.5 flex flex-wrap gap-1" aria-label="Tags do bloqueio">
+                          {(b.tags ?? []).map((tag) => (
+                            <span
+                              key={`${b.id}-${tag}`}
+                              className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[11px] font-medium text-amber-200/90"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {b.observation ? (
+                        <p className="print-sheet-muted mt-1.5 text-xs text-gray-400">{b.observation}</p>
+                      ) : null}
+                    </div>
+                    <div className="flex shrink-0 flex-wrap gap-1 print:hidden">
+                      <button
+                        type="button"
+                        onClick={() => setBlockerQuickEditId((cur) => (cur === b.id ? null : b.id))}
+                        className="rounded border border-gray-600 px-2 py-1 text-xs text-gray-300 hover:bg-orbitus-card"
+                      >
+                        {blockerQuickEditId === b.id ? 'Fechar' : 'Nota e tags'}
+                      </button>
+                      {b.status === 'active' && (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (isDemoMode()) {
+                              setBlockers((prev) => prev.map((x) => (x.id === b.id ? { ...x, status: 'resolved' as const } : x)));
+                              showToast('Bloqueio resolvido!');
+                              setBlockerQuickEditId((cur) => (cur === b.id ? null : cur));
+                              return;
+                            }
+                            const token = getToken();
+                            if (!token) return;
+                            const res = await fetch(`${API_URL}/students/${id}/blockers/${b.id}`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                              body: JSON.stringify({ status: 'resolved' }),
+                            });
+                            if (res.ok) {
+                              setBlockers((prev) => prev.map((x) => (x.id === b.id ? { ...x, status: 'resolved' as const } : x)));
+                              showToast('Bloqueio resolvido!');
+                              setBlockerQuickEditId((cur) => (cur === b.id ? null : cur));
+                            }
+                            loadSummary();
+                          }}
+                          className="rounded bg-green-500/20 px-2 py-1 text-xs text-green-400 hover:bg-green-500/30"
+                        >
+                          Resolver
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  {b.status === 'active' && (
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (isDemoMode()) {
-                          setBlockers((prev) => prev.map((x) => (x.id === b.id ? { ...x, status: 'resolved' as const } : x)));
-                          showToast('Bloqueio resolvido!');
-                          return;
+                  {blockerQuickEditId === b.id && (
+                    <form
+                      key={`qe-${b.id}`}
+                      className="mt-3 space-y-2 border-t border-gray-700/80 pt-3 print:hidden"
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        const form = e.currentTarget;
+                        const obs = (form.elements.namedItem('quickObservation') as HTMLTextAreaElement)?.value ?? '';
+                        const tagsRaw = (form.elements.namedItem('quickTags') as HTMLInputElement)?.value ?? '';
+                        const tagsNext = parseBlockerTagsInput(tagsRaw);
+                        setBlockerPatchingId(b.id);
+                        try {
+                          if (isDemoMode()) {
+                            setBlockers((prev) =>
+                              prev.map((x) =>
+                                x.id === b.id ? { ...x, observation: obs.trim() || null, tags: tagsNext } : x,
+                              ),
+                            );
+                            showToast('Bloqueio atualizado.');
+                            setBlockerQuickEditId(null);
+                            return;
+                          }
+                          const token = getToken();
+                          if (!token) return;
+                          const res = await fetch(`${API_URL}/students/${id}/blockers/${b.id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                            body: JSON.stringify({ observation: obs.trim() || null, tags: tagsNext }),
+                          });
+                          const data = (await res.json().catch(() => null)) as BlockerItem | null;
+                          if (res.ok && data) {
+                            setBlockers((prev) =>
+                              prev.map((x) =>
+                                x.id === b.id
+                                  ? {
+                                      ...x,
+                                      observation: data.observation ?? null,
+                                      tags: Array.isArray(data.tags) ? data.tags : tagsNext,
+                                    }
+                                  : x,
+                              ),
+                            );
+                            showToast('Bloqueio atualizado.');
+                            setBlockerQuickEditId(null);
+                            loadSummary();
+                          }
+                        } finally {
+                          setBlockerPatchingId(null);
                         }
-                        const token = getToken();
-                        if (!token) return;
-                        const res = await fetch(`${API_URL}/students/${id}/blockers/${b.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ status: 'resolved' }) });
-                        if (res.ok) { setBlockers((prev) => prev.map((x) => (x.id === b.id ? { ...x, status: 'resolved' as const } : x))); showToast('Bloqueio resolvido!'); }
-                        loadSummary();
                       }}
-                      className="rounded bg-green-500/20 px-2 py-1 text-xs text-green-400 hover:bg-green-500/30"
                     >
-                      Resolver
-                    </button>
+                      <label className="block text-xs text-gray-400">Nota / observação</label>
+                      <textarea
+                        name="quickObservation"
+                        rows={2}
+                        defaultValue={b.observation ?? ''}
+                        className="w-full rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-white placeholder-gray-500 focus:border-orbitus-accent focus:outline-none"
+                        placeholder="Ex.: revisou com o tutor na sexta"
+                      />
+                      <label className="block text-xs text-gray-400">Tags (vírgula ou ponto e vírgula)</label>
+                      <input
+                        name="quickTags"
+                        type="text"
+                        defaultValue={(b.tags ?? []).join(', ')}
+                        className="w-full rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-orbitus-accent focus:outline-none"
+                        placeholder="ex.: sintaxe, revisão"
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="submit"
+                          disabled={blockerPatchingId === b.id}
+                          className="rounded bg-amber-500/20 px-3 py-1.5 text-xs text-amber-300 disabled:opacity-50"
+                        >
+                          {blockerPatchingId === b.id ? 'Salvando…' : 'Salvar'}
+                        </button>
+                        <button
+                          type="button"
+                          className="text-xs text-gray-500 hover:text-gray-300"
+                          onClick={() => setBlockerQuickEditId(null)}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </form>
                   )}
                 </li>
               ))}
@@ -628,10 +809,10 @@ export default function StudentPage() {
           )}
         </div>
 
-        <div className="rounded-xl border border-gray-700 bg-orbitus-card p-6">
+        <div className="print-sheet-card rounded-xl border border-gray-700 bg-orbitus-card p-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-semibold text-white">Metas</h2>
-            <button type="button" onClick={() => setShowGoalForm((v) => !v)} className="rounded bg-blue-500/20 px-3 py-1.5 text-sm font-medium text-blue-400 hover:bg-blue-500/30">
+            <button type="button" onClick={() => setShowGoalForm((v) => !v)} className="rounded bg-blue-500/20 px-3 py-1.5 text-sm font-medium text-blue-400 hover:bg-blue-500/30 print:hidden">
               {showGoalForm ? 'Fechar' : 'Adicionar meta'}
             </button>
           </div>
@@ -670,7 +851,7 @@ export default function StudentPage() {
                   setGoalSubmitting(false);
                 }
               }}
-              className="mb-4 space-y-3"
+              className="mb-4 space-y-3 print:hidden"
             >
               <input name="goalTitle" placeholder="Título da meta" required className="w-full rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-white placeholder-gray-500 focus:border-orbitus-accent focus:outline-none" aria-invalid={!!goalError} aria-describedby={goalError ? 'goal-error' : undefined} />
               <input name="goalDeadline" type="date" className="w-full rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-white focus:border-orbitus-accent focus:outline-none" />
@@ -683,9 +864,9 @@ export default function StudentPage() {
           ) : (
             <ul className="space-y-2">
               {goals.map((g) => (
-                <li key={g.id} className="flex items-center justify-between rounded-lg bg-orbitus-dark/50 px-3 py-2 text-sm">
+                <li key={g.id} className="print-sheet-row flex items-center justify-between rounded-lg bg-orbitus-dark/50 px-3 py-2 text-sm">
                   <div>
-                    <span className={g.status === 'completed' ? 'text-gray-500 line-through' : 'font-medium text-white'}>{g.title}</span>
+                    <span className={g.status === 'completed' ? 'text-gray-500 line-through print:text-gray-500' : 'font-medium text-white'}>{g.title}</span>
                     {g.deadlineAt && (
                       <>
                         <span className="ml-2 text-gray-500">até {new Date(g.deadlineAt).toLocaleDateString('pt-BR')}</span>
@@ -705,7 +886,7 @@ export default function StudentPage() {
                     <span className={`ml-2 rounded px-1.5 py-0.5 text-xs ${g.status === 'completed' ? 'bg-green-500/20 text-green-400' : g.status === 'in_progress' ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-500/20 text-gray-400'}`}>{g.status === 'completed' ? 'concluída' : g.status === 'in_progress' ? 'em andamento' : 'pendente'}</span>
                   </div>
                   {g.status !== 'completed' && (
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 print:hidden">
                       {g.status === 'pending' && (
                         <button
                           type="button"
@@ -759,7 +940,7 @@ export default function StudentPage() {
         </div>
 
         {skillBars.length > 0 && (
-          <div className="rounded-xl border border-gray-700 bg-orbitus-card p-6">
+          <div className="print-sheet-card rounded-xl border border-gray-700 bg-orbitus-card p-6">
             <h2 className="mb-4 font-semibold text-white">Habilidades</h2>
             <div className="space-y-3">
               {skillBars.map((s) => (
@@ -783,18 +964,18 @@ export default function StudentPage() {
           </div>
         )}
 
-        <div className="rounded-xl border border-gray-700 bg-orbitus-card p-6">
+        <div className="print-sheet-card rounded-xl border border-gray-700 bg-orbitus-card p-6">
           <h2 className="mb-4 font-semibold text-white">Últimas aulas</h2>
           {lastLessons.length === 0 ? (
-            <p className="text-gray-500">Nenhuma aula registrada ainda.</p>
+            <p className="print-sheet-muted text-gray-500">Nenhuma aula registrada ainda.</p>
           ) : (
             <div className="relative">
-              <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-gray-600" aria-hidden />
+              <div className="absolute left-3 top-2 bottom-2 w-0.5 bg-gray-600 print:bg-gray-400" aria-hidden />
               <ul className="space-y-0">
                 {lastLessons.map((l) => (
                   <li key={l.id} className="relative flex gap-4 pb-4 last:pb-0">
-                    <div className="relative z-10 mt-1.5 flex h-3 w-3 shrink-0 rounded-full bg-orbitus-accent ring-4 ring-orbitus-card" aria-hidden />
-                    <div className="min-w-0 flex-1 rounded-lg bg-orbitus-dark/50 px-3 py-2 text-sm">
+                    <div className="relative z-10 mt-1.5 flex h-3 w-3 shrink-0 rounded-full bg-orbitus-accent ring-4 ring-orbitus-card print:ring-white" aria-hidden />
+                    <div className="print-sheet-row min-w-0 flex-1 rounded-lg bg-orbitus-dark/50 px-3 py-2 text-sm">
                       <p className="font-medium text-white">{l.topicName}</p>
                       <p className="mt-0.5 text-xs text-gray-400">
                         {new Date(l.heldAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}

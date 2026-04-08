@@ -1,12 +1,20 @@
 'use client';
 
-import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import { useEffect, useLayoutEffect, useState, useMemo, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
-import type { StudentListItem } from '@orbitus/shared';
+import type { AttentionQueueItem, StudentListItem } from '@orbitus/shared';
 import { StudentModal } from '@/components/StudentModal';
-import { isDemoMode, getAllMockStudents } from '@/lib/mock-data';
+import { AttentionHintsBadges, attentionHintsVisible } from '@/components/AttentionHintsBadges';
+import {
+  isDemoMode,
+  getAllMockStudents,
+  enrichStudentsWithAttentionHints,
+  getMockAttentionQueue,
+} from '@/lib/mock-data';
+import { buildRosterCsv, buildRosterReportCsv } from '@/lib/csv-export';
+import { loadRosterFiltersSnapshot, saveRosterFiltersSnapshot } from '@/lib/roster-filters-storage';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 const PAGE_SIZE = 20;
@@ -35,12 +43,46 @@ export default function RosterPage() {
   const [displayCount, setDisplayCount] = useState(PAGE_SIZE); // demo: quantos exibir
   const [focusedIndex, setFocusedIndex] = useState(0);
   const [retryTrigger, setRetryTrigger] = useState(0);
-  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [attentionQueue, setAttentionQueue] = useState<AttentionQueueItem[]>([]);
+  const [rosterView, setRosterView] = useState<'cards' | 'table'>('cards');
+  const itemRefs = useRef<(HTMLDivElement | HTMLTableRowElement | null)[]>([]);
+  const rosterFiltersHydratedRef = useRef(false);
+  const [rosterFiltersReady, setRosterFiltersReady] = useState(false);
+
+  /** Antes da pintura: restaura filtros; turma na URL tem prioridade (link “Ver alunos”). Evita 1ª busca na API com filtros errados. */
+  useLayoutEffect(() => {
+    if (rosterFiltersHydratedRef.current) return;
+    rosterFiltersHydratedRef.current = true;
+    const urlTurma = searchParams.get('classGroupId')?.trim() ?? '';
+    const snap = loadRosterFiltersSnapshot();
+    if (snap) {
+      if (!urlTurma) setFilterTurma(snap.filterTurma);
+      setSearch(snap.search);
+      setSearchDebounced(snap.search);
+      setFilterStatus(snap.filterStatus);
+      setFilterNoLessonDays(snap.filterNoLessonDays);
+      setSortBy(snap.sortBy);
+    }
+    setRosterFiltersReady(true);
+  }, [searchParams]);
+
+  /** Navegação client-side com ?classGroupId= força a turma (ex.: “Ver alunos” no Dashboard). */
+  useEffect(() => {
+    if (!rosterFiltersReady) return;
+    const q = searchParams.get('classGroupId')?.trim() ?? '';
+    if (q) setFilterTurma(q);
+  }, [searchParams, rosterFiltersReady]);
 
   useEffect(() => {
-    const q = searchParams.get('classGroupId') ?? '';
-    setFilterTurma((prev) => (prev !== q ? q : prev));
-  }, [searchParams]);
+    if (!rosterFiltersReady) return;
+    saveRosterFiltersSnapshot({
+      search,
+      filterTurma,
+      filterStatus,
+      filterNoLessonDays,
+      sortBy,
+    });
+  }, [rosterFiltersReady, search, filterTurma, filterStatus, filterNoLessonDays, sortBy]);
 
   useEffect(() => {
     const t = window.setTimeout(() => setSearchDebounced(search), 400);
@@ -53,8 +95,9 @@ export default function RosterPage() {
       window.location.href = '/login';
       return;
     }
+    if (!rosterFiltersReady) return;
     if (isDemoMode()) {
-      setStudents(getAllMockStudents());
+      setStudents(enrichStudentsWithAttentionHints(getAllMockStudents()));
       setTotalFromApi(null);
       setError('');
       setLoading(false);
@@ -69,6 +112,7 @@ export default function RosterPage() {
     if (filterTurma) params.set('classGroupId', filterTurma);
     if (filterStatus) params.set('status', filterStatus);
     if (filterNoLessonDays !== '' && filterNoLessonDays > 0) params.set('noLessonSinceDays', String(filterNoLessonDays));
+    params.set('sortBy', sortBy);
     fetch(`${API_URL}/students?${params.toString()}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -89,7 +133,24 @@ export default function RosterPage() {
       })
       .catch(() => setError('Falha ao carregar. A API está rodando?'))
       .finally(() => setLoading(false));
-  }, [searchDebounced, filterTurma, filterStatus, filterNoLessonDays, retryTrigger]);
+  }, [rosterFiltersReady, searchDebounced, filterTurma, filterStatus, filterNoLessonDays, sortBy, retryTrigger]);
+
+  useEffect(() => {
+    const token = getToken();
+    if (!token) return;
+    if (isDemoMode()) {
+      setAttentionQueue(getMockAttentionQueue(12));
+      return;
+    }
+    fetch(`${API_URL}/students/attention-queue?limit=12`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => {
+        if (Array.isArray(data)) setAttentionQueue(data);
+      })
+      .catch(() => setAttentionQueue([]));
+  }, [retryTrigger]);
 
   const classGroups = useMemo(() => {
     const map = new Map<string, string>();
@@ -99,20 +160,21 @@ export default function RosterPage() {
     return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
   }, [students]);
 
+  /** Modo API: filtros e ordenacao vêm do servidor (paginacao consistente). Demo: filtro/ordem no cliente. */
   const filteredList = useMemo(() => {
+    if (!isDemoMode()) return students;
     const list = students.filter((s) => {
       const matchSearch = !search.trim() || s.displayName.toLowerCase().includes(search.toLowerCase()) || (s.fullName?.toLowerCase().includes(search.toLowerCase()));
       const matchTurma = !filterTurma || s.classGroup?.id === filterTurma;
       const matchStatus = !filterStatus || s.status === filterStatus;
       return matchSearch && matchTurma && matchStatus;
     });
-    const sorted = [...list].sort((a, b) => {
+    return [...list].sort((a, b) => {
       if (sortBy === 'name') return (a.displayName ?? '').localeCompare(b.displayName ?? '', 'pt-BR');
       if (sortBy === 'xp') return (b.xp ?? 0) - (a.xp ?? 0);
       if (sortBy === 'level') return (b.level ?? 0) - (a.level ?? 0);
       return 0;
     });
-    return sorted;
   }, [students, search, filterTurma, filterStatus, sortBy]);
 
   const displayedList = useMemo(() => {
@@ -122,6 +184,43 @@ export default function RosterPage() {
 
   const hasMoreDemo = displayCount < filteredList.length;
   const hasMoreApi = totalFromApi != null && students.length < totalFromApi && !loadingMore;
+
+  const rosterFilterDescription = useMemo(() => {
+    const parts: string[] = [];
+    const q = isDemoMode() ? search.trim() : searchDebounced.trim();
+    if (q) parts.push(`busca="${q}"`);
+    if (filterTurma) {
+      const name = classGroups.find((g) => g.id === filterTurma)?.name ?? filterTurma;
+      parts.push(`turma=${name}`);
+    } else parts.push('turma=Todas');
+    if (filterStatus) parts.push(`status=${filterStatus}`);
+    else parts.push('status=Todos');
+    if (filterNoLessonDays !== '' && filterNoLessonDays > 0) {
+      parts.push(`sem aula ha ${filterNoLessonDays}+ dias`);
+    } else parts.push('filtro sem aula=off');
+    parts.push(
+      `ordenacao=${sortBy === 'name' ? 'nome A-Z' : sortBy === 'xp' ? 'XP (maior primeiro)' : 'nivel (maior primeiro)'}`,
+    );
+    if (!isDemoMode() && totalFromApi != null && students.length < totalFromApi) {
+      parts.push(`NOTA: lista na tela ${students.length}/${totalFromApi} alunos (exporta so a pagina carregada)`);
+    }
+    if (isDemoMode() && displayCount < filteredList.length) {
+      parts.push(`NOTA: modo demo mostra ${displayCount}/${filteredList.length} (Carregar mais para incluir)`);
+    }
+    return parts.join(' | ');
+  }, [
+    search,
+    searchDebounced,
+    filterTurma,
+    filterStatus,
+    filterNoLessonDays,
+    sortBy,
+    classGroups,
+    totalFromApi,
+    students.length,
+    displayCount,
+    filteredList.length,
+  ]);
 
   const loadMoreApi = useCallback(() => {
     const token = getToken();
@@ -134,13 +233,14 @@ export default function RosterPage() {
     if (filterTurma) params.set('classGroupId', filterTurma);
     if (filterStatus) params.set('status', filterStatus);
     if (filterNoLessonDays !== '' && filterNoLessonDays > 0) params.set('noLessonSinceDays', String(filterNoLessonDays));
+    params.set('sortBy', sortBy);
     fetch(`${API_URL}/students?${params.toString()}`, { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.items?.length) setStudents((prev) => [...prev, ...data.items]);
       })
       .finally(() => setLoadingMore(false));
-  }, [searchDebounced, filterTurma, filterStatus, filterNoLessonDays, students.length, totalFromApi, loadingMore]);
+  }, [searchDebounced, filterTurma, filterStatus, filterNoLessonDays, sortBy, students.length, totalFromApi, loadingMore]);
 
   const openModal = useCallback((s: StudentListItem) => setModalStudent(s), []);
   const clampFocus = useCallback((i: number) => Math.max(0, Math.min(i, displayedList.length - 1)), [displayedList.length]);
@@ -150,9 +250,19 @@ export default function RosterPage() {
   }, [displayedList.length, clampFocus]);
 
   useEffect(() => {
-    const el = cardRefs.current[focusedIndex];
+    const el = itemRefs.current[focusedIndex];
     if (el) el.focus();
-  }, [focusedIndex]);
+  }, [focusedIndex, rosterView]);
+
+  useEffect(() => {
+    const v = window.localStorage.getItem('orbitus-roster-view');
+    if (v === 'table' || v === 'cards') setRosterView(v);
+  }, []);
+
+  const setRosterViewPersist = useCallback((v: 'cards' | 'table') => {
+    setRosterView(v);
+    window.localStorage.setItem('orbitus-roster-view', v);
+  }, []);
 
   const showDemoBanner = isDemoMode();
 
@@ -162,7 +272,7 @@ export default function RosterPage() {
 
   if (loading) {
     return (
-      <main id="main" className="min-h-screen p-8">
+      <main id="main" className="page-shell">
         <div className="mb-6">
           <div className="mb-1 h-8 w-32 animate-pulse rounded bg-gray-700" />
           <div className="h-4 w-48 animate-pulse rounded bg-gray-700/70" />
@@ -189,28 +299,28 @@ export default function RosterPage() {
   }
 
   return (
-    <main id="main" className="min-h-screen p-8">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div>
+    <main id="main" className="page-shell">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold text-orbitus-accent">Roster</h1>
           <p className="text-gray-400">
             Sua party de alunos · {displayedList.length}{isDemoMode() ? ` de ${filteredList.length}` : totalFromApi != null ? ` de ${totalFromApi}` : ''} aluno(s)
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 touch-manipulation">
           <button
             type="button"
             onClick={() => {
-              const headers = ['Nome', 'Nome completo', 'Turma', 'Nível', 'XP', 'Status'];
-              const rows = displayedList.map((s) => [
-                s.displayName ?? '',
-                s.fullName ?? '',
-                s.classGroup?.name ?? '',
-                String(s.level ?? 0),
-                String(s.xp ?? 0),
-                s.status ?? '',
-              ]);
-              const csv = [headers.join(';'), ...rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(';'))].join('\r\n');
+              const csv = buildRosterCsv(
+                displayedList.map((s) => ({
+                  displayName: s.displayName ?? '',
+                  fullName: s.fullName,
+                  classGroupName: s.classGroup?.name ?? '',
+                  level: s.level ?? 0,
+                  xp: s.xp ?? 0,
+                  status: s.status ?? '',
+                })),
+              );
               const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
               const a = document.createElement('a');
               a.href = URL.createObjectURL(blob);
@@ -218,21 +328,95 @@ export default function RosterPage() {
               a.click();
               URL.revokeObjectURL(a.href);
             }}
-            className="rounded-lg border border-gray-600 px-4 py-2 text-sm text-gray-300 hover:bg-orbitus-card"
+            className="min-h-11 rounded-lg border border-gray-600 px-4 py-2.5 text-sm text-gray-300 hover:bg-orbitus-card sm:min-h-0 sm:py-2"
           >
             Exportar CSV
           </button>
-          <Link href="/students/new" className="rounded-lg bg-orbitus-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90">Cadastrar aluno</Link>
+          <button
+            type="button"
+            title="Inclui data, filtros aplicados e colunas de triagem (bloqueios, metas, última aula)"
+            onClick={() => {
+              const csv = buildRosterReportCsv({
+                generatedAt: new Date(),
+                filterDescription: rosterFilterDescription,
+                rows: displayedList.map((s) => ({
+                  displayName: s.displayName ?? '',
+                  fullName: s.fullName,
+                  classGroupName: s.classGroup?.name ?? '',
+                  level: s.level ?? 0,
+                  xp: s.xp ?? 0,
+                  status: s.status ?? '',
+                  activeBlockersCount: s.attentionHints?.activeBlockersCount,
+                  overdueGoalsCount: s.attentionHints?.overdueGoalsCount,
+                  daysSinceLastLesson: s.attentionHints?.daysSinceLastLesson,
+                })),
+              });
+              const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+              const a = document.createElement('a');
+              a.href = URL.createObjectURL(blob);
+              a.download = `relatorio-roster-${new Date().toISOString().slice(0, 10)}.csv`;
+              a.click();
+              URL.revokeObjectURL(a.href);
+            }}
+            className="min-h-11 rounded-lg border border-orbitus-accent/40 bg-orbitus-accent/10 px-4 py-2.5 text-sm text-orbitus-accent hover:bg-orbitus-accent/20 sm:min-h-0 sm:py-2"
+          >
+            Relatório (CSV)
+          </button>
+          <Link href="/students/new" className="inline-flex min-h-11 items-center justify-center rounded-lg bg-orbitus-accent px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 sm:min-h-0 sm:py-2">
+            Cadastrar aluno
+          </Link>
         </div>
       </div>
 
-      <div className="mb-6 flex flex-wrap items-center gap-3">
+      {attentionQueue.length > 0 && (
+        <section
+          className="mb-6 rounded-xl border border-amber-500/35 bg-orbitus-card/90 p-4"
+          aria-labelledby="attention-queue-heading"
+        >
+          <h2 id="attention-queue-heading" className="mb-3 text-sm font-semibold text-amber-200">
+            Fila de atenção
+          </h2>
+          <p className="mb-3 text-xs text-gray-500">
+            Prioridade por bloqueios ativos, metas atrasadas e falta de aula recente (7 dias).
+          </p>
+          <ul className="space-y-2">
+            {attentionQueue.map((row) => (
+              <li
+                key={row.studentId}
+                className="flex flex-col gap-2 rounded-lg border border-gray-700/60 bg-orbitus-dark/40 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <Link
+                  href={`/students/${row.studentId}`}
+                  className="font-medium text-orbitus-accent hover:underline"
+                >
+                  {row.displayName}
+                  {row.classGroup?.name ? (
+                    <span className="ml-2 text-xs font-normal text-gray-500">· {row.classGroup.name}</span>
+                  ) : null}
+                </Link>
+                <div className="flex flex-wrap gap-1">
+                  {row.reasons.map((r, i) => (
+                    <span
+                      key={`${row.studentId}-${i}`}
+                      className="rounded bg-gray-700/90 px-2 py-0.5 text-xs text-gray-300"
+                    >
+                      {r}
+                    </span>
+                  ))}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <div className="mb-6 flex flex-col gap-3 touch-manipulation sm:flex-row sm:flex-wrap sm:items-center">
         <input
           type="search"
           placeholder="Buscar por nome..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="min-w-[200px] rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-white placeholder-gray-500 focus:border-orbitus-accent focus:outline-none"
+          className="min-h-11 w-full min-w-0 rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-white placeholder-gray-500 focus:border-orbitus-accent focus:outline-none sm:min-h-0 sm:min-w-[200px] sm:w-auto"
         />
         <select
           value={filterTurma}
@@ -244,7 +428,7 @@ export default function RosterPage() {
               const q = params.toString();
               router.replace(q ? `${pathname}?${q}` : pathname);
             }}
-          className="rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-white focus:border-orbitus-accent focus:outline-none"
+          className="min-h-11 w-full rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-white focus:border-orbitus-accent focus:outline-none sm:min-h-0 sm:w-auto"
         >
           <option value="">Todas as turmas</option>
           {classGroups.map((g) => (
@@ -254,7 +438,7 @@ export default function RosterPage() {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-white focus:border-orbitus-accent focus:outline-none"
+          className="min-h-11 w-full rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-white focus:border-orbitus-accent focus:outline-none sm:min-h-0 sm:w-auto"
         >
           <option value="">Todos os status</option>
           <option value="active">Ativo</option>
@@ -265,7 +449,7 @@ export default function RosterPage() {
           <select
             value={filterNoLessonDays === '' ? '' : filterNoLessonDays}
             onChange={(e) => { const v = e.target.value; setFilterNoLessonDays(v === '' ? '' : Number(v)); }}
-            className="rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-sm text-white focus:border-orbitus-accent focus:outline-none"
+            className="min-h-11 w-full rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-sm text-white focus:border-orbitus-accent focus:outline-none sm:min-h-0 sm:w-auto"
             aria-label="Filtro sem aula"
           >
             <option value="">Todos</option>
@@ -276,36 +460,65 @@ export default function RosterPage() {
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as 'name' | 'xp' | 'level')}
-          className="rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-sm text-white focus:border-orbitus-accent focus:outline-none"
+          className="min-h-11 w-full rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-sm text-white focus:border-orbitus-accent focus:outline-none sm:min-h-0 sm:w-auto"
           aria-label="Ordenar por"
         >
           <option value="name">Nome (A–Z)</option>
           <option value="xp">XP (maior primeiro)</option>
           <option value="level">Nível (maior primeiro)</option>
         </select>
+        <div
+          className="inline-flex w-full max-w-xs overflow-hidden rounded-lg border border-gray-600 sm:w-auto sm:max-w-none"
+          role="group"
+          aria-label="Visualização da lista"
+        >
+          <button
+            type="button"
+            aria-pressed={rosterView === 'cards'}
+            onClick={() => setRosterViewPersist('cards')}
+            className={`min-h-11 flex-1 px-3 py-2.5 text-sm sm:min-h-0 sm:flex-none sm:py-2 ${rosterView === 'cards' ? 'bg-orbitus-accent/20 text-orbitus-accent' : 'bg-orbitus-dark text-gray-400 hover:text-white'}`}
+          >
+            Cards
+          </button>
+          <button
+            type="button"
+            aria-pressed={rosterView === 'table'}
+            onClick={() => setRosterViewPersist('table')}
+            className={`min-h-11 flex-1 border-l border-gray-600 px-3 py-2.5 text-sm sm:min-h-0 sm:flex-none sm:py-2 ${rosterView === 'table' ? 'bg-orbitus-accent/20 text-orbitus-accent' : 'bg-orbitus-dark text-gray-400 hover:text-white'}`}
+          >
+            Tabela
+          </button>
+        </div>
         {(search.trim() || filterTurma || filterStatus || filterNoLessonDays !== '') && (
           <button
             type="button"
-            onClick={() => { setSearch(''); setFilterTurma(''); setFilterStatus(''); setFilterNoLessonDays(''); }}
-            className="rounded-lg border border-gray-500 px-3 py-2 text-sm text-gray-400 hover:bg-orbitus-card hover:text-white"
+            onClick={() => {
+              setSearch('');
+              setSearchDebounced('');
+              setFilterTurma('');
+              setFilterStatus('');
+              setFilterNoLessonDays('');
+              router.replace(pathname);
+            }}
+            className="min-h-11 rounded-lg border border-gray-500 px-3 py-2.5 text-sm text-gray-400 hover:bg-orbitus-card hover:text-white sm:min-h-0 sm:py-2"
           >
             Limpar filtros
           </button>
         )}
-        {filteredList.length > 1 && (
+        {displayedList.length > 1 && (
           <div className="flex items-center gap-1">
             <button
               type="button"
-              onClick={() => { const nextIndex = clampFocus(focusedIndex - 1); setFocusedIndex(nextIndex); const student = filteredList[nextIndex]; if (student) openModal(student); }}
+              onClick={() => { const nextIndex = clampFocus(focusedIndex - 1); setFocusedIndex(nextIndex); const student = displayedList[nextIndex]; if (student) openModal(student); }}
               className="rounded border border-gray-600 px-2 py-1 text-gray-400 hover:bg-orbitus-card"
               aria-label="Anterior"
             >
               ←
             </button>
-            <span className="px-2 text-sm text-gray-500">{focusedIndex + 1} / {filteredList.length}</span>
+            <span className="px-2 text-sm text-gray-500">{focusedIndex + 1} / {displayedList.length}</span>
             <button
               type="button"
-              onClick={() => { const nextIndex = clampFocus(focusedIndex + 1); setFocusedIndex(nextIndex); const student = filteredList[nextIndex]; if (student) openModal(student); }}
+              onClick={() => { const nextIndex = clampFocus(focusedIndex + 1); setFocusedIndex(nextIndex); const student = displayedList[nextIndex]; if (student) openModal(student); }}
               className="rounded border border-gray-600 px-2 py-1 text-gray-400 hover:bg-orbitus-card"
               aria-label="Próximo"
             >
@@ -315,9 +528,16 @@ export default function RosterPage() {
         )}
       </div>
 
-      {filteredList.length > 0 && (
+      {rosterFiltersReady && (
+        <p className="mb-3 text-xs text-gray-600">
+          Busca, turma, status, filtro “sem aula” (modo API) e ordenação ficam salvos neste navegador. O atalho “Ver alunos”
+          no Dashboard prioriza a turma do link e substitui a turma salva.
+        </p>
+      )}
+
+      {displayedList.length > 0 && (
         <p className="mb-4 text-center text-xs text-gray-500">
-          Dica: use ← → para navegar entre os cards e Enter para abrir a ficha.
+          Dica: use ← → para navegar entre {rosterView === 'cards' ? 'os cards' : 'as linhas'} e Enter para abrir a ficha.
         </p>
       )}
 
@@ -351,8 +571,6 @@ export default function RosterPage() {
       )}
 
       <div
-        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-        role="list"
         onKeyDown={(e) => {
           if (displayedList.length === 0) return;
           if (e.key === 'ArrowLeft') { e.preventDefault(); setFocusedIndex((i) => clampFocus(i - 1)); }
@@ -360,35 +578,93 @@ export default function RosterPage() {
           else if (e.key === 'Enter') { e.preventDefault(); const student = displayedList[focusedIndex]; if (student) openModal(student); }
         }}
       >
-        {displayedList.map((s, i) => (
-          <motion.div
-            key={s.id}
-            ref={(el) => { cardRefs.current[i] = el; }}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.03 }}
-            role="button"
-            tabIndex={i === focusedIndex ? 0 : -1}
-            onClick={() => { setFocusedIndex(i); openModal(s); }}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); openModal(s); } }}
-            className="cursor-pointer rounded-xl border border-gray-700 bg-orbitus-card p-5 transition hover:border-orbitus-accent/50 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orbitus-accent/50"
-          >
-            <div className="mb-3 flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orbitus-accent/20 text-2xl">
-                {s.avatarType === 'emoji' ? s.avatarValue : '🧑‍🎓'}
-              </div>
-              <div>
-                <h2 className="font-semibold text-white">{s.displayName}</h2>
-                <p className="text-xs text-gray-500">{s.classGroup?.name ?? 'Sem turma'} · Nível {s.level}</p>
-              </div>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-orbitus-xp">XP {s.xp}</span>
-              <span className={`rounded px-2 py-0.5 text-xs ${s.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}`}>{s.status}</span>
-            </div>
-            <p className="mt-3 text-center text-sm text-orbitus-accent">Clique ou Enter para abrir ficha →</p>
-          </motion.div>
-        ))}
+        {rosterView === 'cards' ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" role="list">
+            {displayedList.map((s, i) => (
+              <motion.div
+                key={s.id}
+                ref={(el) => { itemRefs.current[i] = el; }}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.03 }}
+                role="button"
+                tabIndex={i === focusedIndex ? 0 : -1}
+                onClick={() => { setFocusedIndex(i); openModal(s); }}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); openModal(s); } }}
+                className="cursor-pointer rounded-xl border border-gray-700 bg-orbitus-card p-5 transition hover:border-orbitus-accent/50 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orbitus-accent/50"
+              >
+                <div className="mb-3 flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orbitus-accent/20 text-2xl">
+                    {s.avatarType === 'emoji' ? s.avatarValue : '🧑‍🎓'}
+                  </div>
+                  <div>
+                    <h2 className="font-semibold text-white">{s.displayName}</h2>
+                    <p className="text-xs text-gray-500">{s.classGroup?.name ?? 'Sem turma'} · Nível {s.level}</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-orbitus-xp">XP {s.xp}</span>
+                  <span className={`rounded px-2 py-0.5 text-xs ${s.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}`}>{s.status}</span>
+                </div>
+                <AttentionHintsBadges hints={s.attentionHints} className="mt-2" variant="card" />
+                <p className="mt-3 text-center text-sm text-orbitus-accent">Clique ou Enter para abrir ficha →</p>
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-gray-700">
+            <table className="w-full min-w-[640px] border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-gray-700 bg-orbitus-card/80 text-xs uppercase tracking-wide text-gray-500">
+                  <th className="px-4 py-3 font-medium">Aluno</th>
+                  <th className="px-4 py-3 font-medium">Turma</th>
+                  <th className="px-4 py-3 font-medium">Nível</th>
+                  <th className="px-4 py-3 font-medium">XP</th>
+                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-medium">Triagem</th>
+                </tr>
+              </thead>
+              <tbody>
+                {displayedList.map((s, i) => {
+                  const h = s.attentionHints;
+                  return (
+                    <tr
+                      key={s.id}
+                      ref={(el) => { itemRefs.current[i] = el; }}
+                      tabIndex={i === focusedIndex ? 0 : -1}
+                      aria-label={`Abrir ficha de ${s.displayName}`}
+                      onClick={() => { setFocusedIndex(i); openModal(s); }}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); openModal(s); } }}
+                      className={`cursor-pointer border-b border-gray-800 transition hover:bg-orbitus-card/60 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-orbitus-accent/40 ${i === focusedIndex ? 'bg-orbitus-card/40' : ''}`}
+                    >
+                      <td className="px-4 py-3 font-medium text-white">
+                        <span className="mr-2 inline-block w-6 text-center text-base" aria-hidden>
+                          {s.avatarType === 'emoji' ? s.avatarValue : '🧑‍🎓'}
+                        </span>
+                        {s.displayName}
+                      </td>
+                      <td className="px-4 py-3 text-gray-400">{s.classGroup?.name ?? '—'}</td>
+                      <td className="px-4 py-3 text-gray-300">{s.level ?? '—'}</td>
+                      <td className="px-4 py-3 text-orbitus-xp">{s.xp ?? 0}</td>
+                      <td className="px-4 py-3">
+                        <span className={`rounded px-2 py-0.5 text-xs ${s.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}`}>
+                          {s.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {attentionHintsVisible(h) ? (
+                          <AttentionHintsBadges hints={h} variant="table" />
+                        ) : (
+                          <span className="text-gray-600">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {(hasMoreDemo || hasMoreApi) && (

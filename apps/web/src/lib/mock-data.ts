@@ -1,4 +1,4 @@
-import type { StudentListItem, StudentSummary } from '@orbitus/shared';
+import type { AttentionQueueItem, StudentListItem, StudentSummary, StudentAttentionHints } from '@orbitus/shared';
 
 export const DEMO_TOKEN = 'demo';
 const STORAGE_KEY = 'orbitus_mock_students';
@@ -151,6 +151,105 @@ export function getMockSummary(student: StudentListItem): StudentSummary {
 
 export function getAllMockStudents(): StudentListItem[] {
   return [...MOCK_STUDENTS, ...getStoredMockStudents()];
+}
+
+function lastLessonDateForMockStudent(studentId: string): Date | null {
+  const lessons = MOCK_LAST_LESSONS[studentId] ?? [];
+  if (lessons.length === 0) return null;
+  let max = 0;
+  for (const l of lessons) {
+    const t = new Date(l.heldAt).getTime();
+    if (t > max) max = t;
+  }
+  return new Date(max);
+}
+
+export function computeMockAttentionHints(studentId: string): StudentAttentionHints {
+  const blockers = MOCK_BLOCKERS.filter((b) => b.studentId === studentId && b.status === 'active');
+  const goals = MOCK_GOALS.filter((g) => g.studentId === studentId && g.status !== 'completed');
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  let overdueGoalsCount = 0;
+  for (const g of goals) {
+    if (g.deadlineAt) {
+      const d = new Date(g.deadlineAt);
+      d.setHours(0, 0, 0, 0);
+      if (d < startOfToday) overdueGoalsCount += 1;
+    }
+  }
+  const last = lastLessonDateForMockStudent(studentId);
+  const daysSinceLastLesson = last
+    ? Math.floor((Date.now() - last.getTime()) / 86_400_000)
+    : null;
+  return {
+    activeBlockersCount: blockers.length,
+    overdueGoalsCount,
+    daysSinceLastLesson,
+  };
+}
+
+function mockHadLessonInLast7Days(studentId: string): boolean {
+  const last = lastLessonDateForMockStudent(studentId);
+  if (!last) return false;
+  const since7 = new Date();
+  since7.setDate(since7.getDate() - 7);
+  return last >= since7;
+}
+
+function mockAttentionScore(h: StudentAttentionHints, noRecentLessonIn7Days: boolean): number {
+  let s = 0;
+  s += h.activeBlockersCount * 3;
+  s += h.overdueGoalsCount * 2;
+  if (noRecentLessonIn7Days) {
+    if (h.daysSinceLastLesson === null) s += 5;
+    else if (h.daysSinceLastLesson >= 7) s += 3;
+    else s += 1;
+  }
+  return s;
+}
+
+/** Enriquece lista do Roster no modo demo (badges). */
+export function enrichStudentsWithAttentionHints(students: StudentListItem[]): StudentListItem[] {
+  return students.map((s) => ({
+    ...s,
+    attentionHints: computeMockAttentionHints(s.id),
+  }));
+}
+
+/** Fila de atenção no modo demo (ordenada por prioridade). */
+export function getMockAttentionQueue(limit: number): AttentionQueueItem[] {
+  const students = getAllMockStudents();
+  const out: AttentionQueueItem[] = [];
+  for (const st of students) {
+    const h = computeMockAttentionHints(st.id);
+    const noRecent = !mockHadLessonInLast7Days(st.id);
+    const score = mockAttentionScore(h, noRecent);
+    if (score === 0) continue;
+    const reasons: string[] = [];
+    if (h.activeBlockersCount > 0) {
+      reasons.push(
+        h.activeBlockersCount === 1 ? 'Bloqueio ativo' : `${h.activeBlockersCount} bloqueios ativos`,
+      );
+    }
+    if (h.overdueGoalsCount > 0) {
+      reasons.push(
+        h.overdueGoalsCount === 1 ? 'Meta atrasada' : `${h.overdueGoalsCount} metas atrasadas`,
+      );
+    }
+    if (noRecent) {
+      if (h.daysSinceLastLesson === null) reasons.push('Sem aula registrada');
+      else reasons.push(`Sem aula nos últimos 7 dias (há ${h.daysSinceLastLesson}d da última)`);
+    }
+    out.push({
+      studentId: st.id,
+      displayName: st.displayName,
+      classGroup: st.classGroup ?? null,
+      reasons,
+      score,
+    });
+  }
+  out.sort((a, b) => b.score - a.score);
+  return out.slice(0, Math.min(Math.max(limit, 1), 30));
 }
 
 export interface BlockerItem {

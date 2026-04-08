@@ -126,13 +126,13 @@ export default function NewStudentPage() {
   }
 
   return (
-    <main id="main" className="min-h-screen p-8">
+    <main id="main" className="page-shell">
       <div className="mx-auto max-w-lg">
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-2xl font-bold text-orbitus-accent">Cadastrar aluno</h1>
           <Link
             href="/roster"
-            className="rounded-lg border border-gray-600 px-4 py-2 text-sm text-gray-300 hover:bg-orbitus-card"
+            className="inline-flex min-h-11 w-fit items-center justify-center rounded-lg border border-gray-600 px-4 py-2.5 text-sm text-gray-300 hover:bg-orbitus-card touch-manipulation sm:min-h-0 sm:py-2"
           >
             ← Voltar ao Roster
           </Link>
@@ -231,17 +231,17 @@ export default function NewStudentPage() {
             <p id="cadastro-error" className="mt-4 text-sm text-red-400" role="alert">{error}</p>
           )}
 
-          <div className="mt-6 flex gap-3">
+          <div className="mt-6 flex flex-col gap-3 touch-manipulation sm:flex-row">
             <button
               type="submit"
               disabled={loading}
-              className="rounded-lg bg-orbitus-accent px-6 py-2 font-medium text-white hover:opacity-90 disabled:opacity-50"
+              className="min-h-11 rounded-lg bg-orbitus-accent px-6 py-2.5 font-medium text-white hover:opacity-90 disabled:opacity-50 sm:min-h-0 sm:py-2"
             >
               {loading ? 'Cadastrando…' : isDemoMode() ? 'Cadastrar (demo)' : 'Cadastrar'}
             </button>
             <Link
               href="/roster"
-              className="rounded-lg border border-gray-600 px-6 py-2 text-gray-300 hover:bg-orbitus-card"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-600 px-6 py-2.5 text-gray-300 hover:bg-orbitus-card sm:min-h-0 sm:py-2"
             >
               Cancelar
             </Link>

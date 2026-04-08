@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { StudentSummary, StudentListItem } from '@orbitus/shared';
 import { isDemoMode, getMockSummary } from '@/lib/mock-data';
+import { AttentionHintsBadges } from '@/components/AttentionHintsBadges';
+import { StudentModalAvatar } from '@/components/StudentModalAvatar';
 
 const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
@@ -94,6 +96,7 @@ export function StudentModal({ studentId, studentPreview, onClose }: StudentModa
   }, [loading, summary]);
 
   const s = summary?.student ?? studentPreview;
+  const triageHints = s.attentionHints ?? studentPreview.attentionHints;
 
   return (
     <AnimatePresence>
@@ -101,7 +104,7 @@ export function StudentModal({ studentId, studentPreview, onClose }: StudentModa
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+        className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 pb-[env(safe-area-inset-bottom)] pt-4 sm:items-center sm:p-4"
         onClick={onClose}
       >
         <motion.div
@@ -113,19 +116,19 @@ export function StudentModal({ studentId, studentPreview, onClose }: StudentModa
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="flex h-[85vh] max-h-[600px] w-[95vw] max-w-4xl flex-col overflow-hidden rounded-2xl border border-gray-700 bg-orbitus-card shadow-2xl sm:h-[60vh]"
+          className="flex max-h-[90dvh] h-[min(85dvh,600px)] w-full max-w-4xl flex-col overflow-hidden rounded-t-2xl border border-gray-700 bg-orbitus-card shadow-2xl sm:h-[60vh] sm:max-h-[600px] sm:w-[95vw] sm:rounded-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex flex-1 flex-col overflow-hidden sm:flex-row">
             <div className="flex min-h-[120px] w-full flex-col items-center justify-center border-b border-gray-700 bg-orbitus-dark/50 p-4 sm:min-h-0 sm:w-[40%] sm:min-w-[200px] sm:border-b-0 sm:border-r sm:p-6">
-              {loading ? (
-                <div className="h-24 w-24 animate-pulse rounded-full bg-gray-700" />
-              ) : (
-                <div className="flex h-28 w-28 items-center justify-center rounded-full bg-orbitus-accent/30 text-5xl shadow-inner ring-2 ring-orbitus-accent/50">
-                  {s.avatarType === 'emoji' ? s.avatarValue : '🧑‍🎓'}
-                </div>
-              )}
-              <p className="mt-2 text-xs text-gray-400 sm:mt-3 sm:text-sm">Avatar (3D em breve)</p>
+              <StudentModalAvatar
+                loading={loading}
+                student={{
+                  avatarType: s.avatarType,
+                  avatarValue: s.avatarValue,
+                  photoUrl: s.photoUrl,
+                }}
+              />
             </div>
 
             <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4 sm:p-6">
@@ -135,6 +138,7 @@ export function StudentModal({ studentId, studentPreview, onClose }: StudentModa
                   <p className="text-sm text-gray-400">
                     {s.classGroup?.name ?? 'Sem turma'} · Nível {s.level} · XP {s.xp}
                   </p>
+                  <AttentionHintsBadges hints={triageHints} className="mt-2" variant="card" />
                 </div>
                 <button
                   type="button"

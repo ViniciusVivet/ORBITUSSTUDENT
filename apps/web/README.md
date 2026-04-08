@@ -62,6 +62,14 @@ apps/web/
 └── README.md (este arquivo)
 ```
 
+## Testes
+
+```bash
+pnpm test
+```
+
+Vitest: `src/lib/csv-export.test.ts` (exportação CSV do Roster).
+
 ## Modo demo
 
 Sem API nem banco: na tela de login, clique em **"Modo demo (testar sem API)"**. Os dados vêm de `mock-data.ts` e do localStorage. Nada é enviado ao servidor.

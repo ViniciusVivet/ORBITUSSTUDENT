@@ -15,28 +15,28 @@ export default function Error({
   }, [error]);
 
   return (
-    <main id="main" className="flex min-h-[60vh] flex-col items-center justify-center gap-6 p-8">
+    <main id="main" className="page-shell flex flex-col items-center justify-center gap-6">
       <h1 className="text-xl font-bold text-white">Algo deu errado</h1>
       <p className="max-w-md text-center text-gray-400">
         Ocorreu um erro inesperado. Você pode tentar novamente ou voltar ao início.
       </p>
-      <div className="flex flex-wrap justify-center gap-3">
+      <div className="flex w-full max-w-sm flex-col gap-3 touch-manipulation sm:max-w-none sm:flex-row sm:flex-wrap sm:justify-center">
         <button
           type="button"
           onClick={() => reset()}
-          className="rounded-lg bg-orbitus-accent px-4 py-2 font-medium text-white hover:opacity-90"
+          className="min-h-11 rounded-lg bg-orbitus-accent px-4 py-2.5 font-medium text-white hover:opacity-90 sm:min-h-0 sm:py-2"
         >
           Tentar de novo
         </button>
         <Link
           href="/"
-          className="rounded-lg border border-gray-600 px-4 py-2 text-gray-300 hover:bg-orbitus-card"
+          className="inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-600 px-4 py-2.5 text-gray-300 hover:bg-orbitus-card sm:min-h-0 sm:py-2"
         >
           Ir para o início
         </Link>
         <Link
           href="/roster"
-          className="rounded-lg border border-gray-600 px-4 py-2 text-gray-300 hover:bg-orbitus-card"
+          className="inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-600 px-4 py-2.5 text-gray-300 hover:bg-orbitus-card sm:min-h-0 sm:py-2"
         >
           Roster
         </Link>

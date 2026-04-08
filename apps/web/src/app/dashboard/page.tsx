@@ -157,7 +157,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <main id="main" className="min-h-screen p-8">
+    <main id="main" className="page-shell">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-orbitus-accent">Dashboard do Professor</h1>
         <p className="text-gray-400">Visão geral da turma (MVP)</p>
@@ -204,11 +204,17 @@ export default function DashboardPage() {
         {cards.length > 0 && cards.every((c) => c.value === 0 || c.value === '0' || c.value === '—') && (
           <div className="mt-6 rounded-xl border border-dashed border-gray-600 bg-orbitus-card/30 p-6 text-center">
             <p className="text-gray-400">Ainda não há dados. Cadastre alunos e registre aulas para ver as métricas aqui.</p>
-            <div className="mt-3 flex flex-wrap justify-center gap-3">
-              <Link href="/students/new" className="rounded-lg bg-orbitus-accent px-4 py-2 text-sm font-medium text-white hover:opacity-90">
+            <div className="mt-3 flex flex-wrap justify-center gap-3 touch-manipulation">
+              <Link
+                href="/students/new"
+                className="inline-flex min-h-11 items-center justify-center rounded-lg bg-orbitus-accent px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 sm:min-h-0 sm:py-2"
+              >
                 Cadastrar aluno
               </Link>
-              <Link href="/roster" className="rounded-lg border border-gray-600 px-4 py-2 text-sm text-gray-300 hover:bg-orbitus-card">
+              <Link
+                href="/roster"
+                className="inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-600 px-4 py-2.5 text-sm text-gray-300 hover:bg-orbitus-card sm:min-h-0 sm:py-2"
+              >
                 Ver Roster
               </Link>
             </div>
@@ -288,20 +294,20 @@ export default function DashboardPage() {
             ))}
             <div ref={chatEndRef} />
           </div>
-          <div className="mt-3 flex gap-2">
+          <div className="mt-3 flex flex-col gap-2 touch-manipulation sm:flex-row sm:items-stretch">
             <input
               type="text"
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendChat()}
               placeholder="Pergunta ou sugestão..."
-              className="flex-1 rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-orbitus-accent focus:outline-none"
+              className="min-h-11 w-full flex-1 rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-orbitus-accent focus:outline-none sm:min-h-0"
             />
             <button
               type="button"
               onClick={handleSendChat}
               disabled={chatSending}
-              className="rounded-lg bg-orbitus-accent px-4 py-2 text-sm font-medium text-white hover:bg-orbitus-accent/90 disabled:opacity-50"
+              className="min-h-11 shrink-0 rounded-lg bg-orbitus-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-orbitus-accent/90 disabled:opacity-50 sm:min-h-0 sm:self-auto sm:py-2"
             >
               {chatSending ? '…' : 'Enviar'}
             </button>
