@@ -11,7 +11,6 @@ COPY . .
 RUN pnpm --filter @orbitus/shared build
 RUN pnpm --filter api exec prisma generate
 RUN pnpm --filter api build
-RUN ls /app/apps/api/dist/main.js && echo "dist OK" || (echo "DIST MISSING" && find /app -name "main.js" 2>/dev/null && exit 1)
 
 FROM base AS runner
 ENV NODE_ENV=production
@@ -31,4 +30,4 @@ COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
 COPY package.json pnpm-workspace.yaml ./
 WORKDIR /app/apps/api
 EXPOSE 3001
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main.js"]
