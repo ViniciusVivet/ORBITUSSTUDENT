@@ -282,23 +282,20 @@ function RosterPage() {
     return (
       <main id="main" className="page-shell">
         <div className="mb-6">
-          <div className="mb-1 h-8 w-32 animate-pulse rounded bg-gray-700" />
-          <div className="h-4 w-48 animate-pulse rounded bg-gray-700/70" />
+          <div className="mb-1 h-7 w-28 animate-pulse rounded bg-orbitus-border" />
+          <div className="h-4 w-40 animate-pulse rounded bg-orbitus-border/70" />
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true" aria-label="Carregando alunos">
           {Array.from({ length: 9 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-gray-700 bg-orbitus-card p-5">
+            <div key={i} className="card-base p-4">
               <div className="mb-3 flex items-center gap-3">
-                <div className="h-12 w-12 animate-pulse rounded-full bg-gray-600" />
+                <div className="h-12 w-12 animate-pulse rounded-full bg-orbitus-border" />
                 <div className="flex-1">
-                  <div className="mb-1 h-4 w-24 animate-pulse rounded bg-gray-600" />
-                  <div className="h-3 w-20 animate-pulse rounded bg-gray-700" />
+                  <div className="mb-2 h-4 w-24 animate-pulse rounded bg-orbitus-border" />
+                  <div className="h-3 w-16 animate-pulse rounded bg-orbitus-border/70" />
                 </div>
               </div>
-              <div className="flex items-center justify-between">
-                <div className="h-4 w-12 animate-pulse rounded bg-gray-600" />
-                <div className="h-5 w-14 animate-pulse rounded bg-gray-600" />
-              </div>
+              <div className="h-1.5 w-full animate-pulse rounded-full bg-orbitus-border" />
             </div>
           ))}
         </div>
@@ -310,9 +307,9 @@ function RosterPage() {
     <main id="main" className="page-shell">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-orbitus-accent">Roster</h1>
-          <p className="text-gray-400">
-            Sua party de alunos · {displayedList.length}{isDemoMode() ? ` de ${filteredList.length}` : totalFromApi != null ? ` de ${totalFromApi}` : ''} aluno(s)
+          <h1 className="text-2xl font-bold text-white">Roster</h1>
+          <p className="text-gray-500 text-sm">
+            {displayedList.length}{isDemoMode() ? ` de ${filteredList.length}` : totalFromApi != null ? ` de ${totalFromApi}` : ''} aluno(s)
           </p>
         </div>
         <div className="flex flex-wrap gap-2 touch-manipulation">
@@ -336,9 +333,9 @@ function RosterPage() {
               a.click();
               URL.revokeObjectURL(a.href);
             }}
-            className="min-h-11 rounded-lg border border-gray-600 px-4 py-2.5 text-sm text-gray-300 hover:bg-orbitus-card sm:min-h-0 sm:py-2"
+            className="btn-ghost min-h-11 px-4 py-2 text-sm sm:min-h-0"
           >
-            Exportar CSV
+            CSV
           </button>
           <button
             type="button"
@@ -366,36 +363,39 @@ function RosterPage() {
               a.click();
               URL.revokeObjectURL(a.href);
             }}
-            className="min-h-11 rounded-lg border border-orbitus-accent/40 bg-orbitus-accent/10 px-4 py-2.5 text-sm text-orbitus-accent hover:bg-orbitus-accent/20 sm:min-h-0 sm:py-2"
+            className="btn-secondary min-h-11 px-4 py-2 text-sm sm:min-h-0"
           >
-            Relatório (CSV)
+            Relatório CSV
           </button>
-          <Link href="/students/new" className="inline-flex min-h-11 items-center justify-center rounded-lg bg-orbitus-accent px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 sm:min-h-0 sm:py-2">
-            Cadastrar aluno
+          <Link href="/students/new" className="btn-primary min-h-11 px-4 py-2 text-sm sm:min-h-0">
+            + Aluno
           </Link>
         </div>
       </div>
 
       {attentionQueue.length > 0 && (
         <section
-          className="mb-6 rounded-xl border border-amber-500/35 bg-orbitus-card/90 p-4"
+          className="mb-6 card-base border-amber-500/25 bg-amber-500/5 p-4"
           aria-labelledby="attention-queue-heading"
         >
-          <h2 id="attention-queue-heading" className="mb-3 text-sm font-semibold text-amber-200">
-            Fila de atenção
-          </h2>
-          <p className="mb-3 text-xs text-gray-500">
-            Prioridade por bloqueios ativos, metas atrasadas e falta de aula recente (7 dias).
-          </p>
-          <ul className="space-y-2">
+          <div className="mb-3 flex items-center gap-2">
+            <span className="text-base" aria-hidden>⚠️</span>
+            <h2 id="attention-queue-heading" className="text-sm font-semibold text-amber-300">
+              Fila de atenção
+            </h2>
+            <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-xs font-semibold text-amber-400">
+              {attentionQueue.length}
+            </span>
+          </div>
+          <ul className="space-y-1.5">
             {attentionQueue.map((row) => (
               <li
                 key={row.studentId}
-                className="flex flex-col gap-2 rounded-lg border border-gray-700/60 bg-orbitus-dark/40 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-2 rounded-lg border border-orbitus-border/60 bg-orbitus-dark/30 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
               >
                 <Link
                   href={`/students/${row.studentId}`}
-                  className="font-medium text-orbitus-accent hover:underline"
+                  className="font-medium text-gray-200 hover:text-orbitus-accent-bright transition"
                 >
                   {row.displayName}
                   {row.classGroup?.name ? (
@@ -406,7 +406,7 @@ function RosterPage() {
                   {row.reasons.map((r, i) => (
                     <span
                       key={`${row.studentId}-${i}`}
-                      className="rounded bg-gray-700/90 px-2 py-0.5 text-xs text-gray-300"
+                      className="rounded-full bg-orbitus-border px-2.5 py-0.5 text-xs text-gray-300"
                     >
                       {r}
                     </span>
@@ -418,13 +418,13 @@ function RosterPage() {
         </section>
       )}
 
-      <div className="mb-6 flex flex-col gap-3 touch-manipulation sm:flex-row sm:flex-wrap sm:items-center">
+      <div className="mb-6 flex flex-col gap-2.5 touch-manipulation sm:flex-row sm:flex-wrap sm:items-center">
         <input
           type="search"
           placeholder="Buscar por nome..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="min-h-11 w-full min-w-0 rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-white placeholder-gray-500 focus:border-orbitus-accent focus:outline-none sm:min-h-0 sm:min-w-[200px] sm:w-auto"
+          className="input-field min-h-11 w-full min-w-0 sm:min-h-0 sm:min-w-[180px] sm:w-auto"
         />
         <select
           value={filterTurma}
@@ -436,7 +436,7 @@ function RosterPage() {
               const q = params.toString();
               router.replace(q ? `${pathname}?${q}` : pathname);
             }}
-          className="min-h-11 w-full rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-white focus:border-orbitus-accent focus:outline-none sm:min-h-0 sm:w-auto"
+          className="input-field min-h-11 w-full sm:min-h-0 sm:w-auto"
         >
           <option value="">Todas as turmas</option>
           {classGroups.map((g) => (
@@ -446,7 +446,7 @@ function RosterPage() {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="min-h-11 w-full rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-white focus:border-orbitus-accent focus:outline-none sm:min-h-0 sm:w-auto"
+          className="input-field min-h-11 w-full sm:min-h-0 sm:w-auto"
         >
           <option value="">Todos os status</option>
           <option value="active">Ativo</option>
@@ -457,10 +457,10 @@ function RosterPage() {
           <select
             value={filterNoLessonDays === '' ? '' : filterNoLessonDays}
             onChange={(e) => { const v = e.target.value; setFilterNoLessonDays(v === '' ? '' : Number(v)); }}
-            className="min-h-11 w-full rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-sm text-white focus:border-orbitus-accent focus:outline-none sm:min-h-0 sm:w-auto"
+            className="input-field min-h-11 w-full text-sm sm:min-h-0 sm:w-auto"
             aria-label="Filtro sem aula"
           >
-            <option value="">Todos</option>
+            <option value="">Sem filtro de aula</option>
             <option value="7">Sem aula há 7+ dias</option>
             <option value="14">Sem aula há 14+ dias</option>
           </select>
@@ -468,15 +468,15 @@ function RosterPage() {
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as 'name' | 'xp' | 'level')}
-          className="min-h-11 w-full rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-sm text-white focus:border-orbitus-accent focus:outline-none sm:min-h-0 sm:w-auto"
+          className="input-field min-h-11 w-full text-sm sm:min-h-0 sm:w-auto"
           aria-label="Ordenar por"
         >
-          <option value="name">Nome (A–Z)</option>
-          <option value="xp">XP (maior primeiro)</option>
-          <option value="level">Nível (maior primeiro)</option>
+          <option value="name">Nome A–Z</option>
+          <option value="xp">XP ↓</option>
+          <option value="level">Nível ↓</option>
         </select>
         <div
-          className="inline-flex w-full max-w-xs overflow-hidden rounded-lg border border-gray-600 sm:w-auto sm:max-w-none"
+          className="inline-flex overflow-hidden rounded-lg border border-orbitus-border sm:w-auto"
           role="group"
           aria-label="Visualização da lista"
         >
@@ -484,7 +484,7 @@ function RosterPage() {
             type="button"
             aria-pressed={rosterView === 'cards'}
             onClick={() => setRosterViewPersist('cards')}
-            className={`min-h-11 flex-1 px-3 py-2.5 text-sm sm:min-h-0 sm:flex-none sm:py-2 ${rosterView === 'cards' ? 'bg-orbitus-accent/20 text-orbitus-accent' : 'bg-orbitus-dark text-gray-400 hover:text-white'}`}
+            className={`min-h-11 flex-1 px-3 py-2 text-sm transition sm:min-h-0 sm:flex-none ${rosterView === 'cards' ? 'bg-orbitus-accent/20 text-orbitus-accent-bright' : 'bg-orbitus-surface text-gray-400 hover:text-white'}`}
           >
             Cards
           </button>
@@ -492,7 +492,7 @@ function RosterPage() {
             type="button"
             aria-pressed={rosterView === 'table'}
             onClick={() => setRosterViewPersist('table')}
-            className={`min-h-11 flex-1 border-l border-gray-600 px-3 py-2.5 text-sm sm:min-h-0 sm:flex-none sm:py-2 ${rosterView === 'table' ? 'bg-orbitus-accent/20 text-orbitus-accent' : 'bg-orbitus-dark text-gray-400 hover:text-white'}`}
+            className={`min-h-11 flex-1 border-l border-orbitus-border px-3 py-2 text-sm transition sm:min-h-0 sm:flex-none ${rosterView === 'table' ? 'bg-orbitus-accent/20 text-orbitus-accent-bright' : 'bg-orbitus-surface text-gray-400 hover:text-white'}`}
           >
             Tabela
           </button>
@@ -508,26 +508,26 @@ function RosterPage() {
               setFilterNoLessonDays('');
               router.replace(pathname);
             }}
-            className="min-h-11 rounded-lg border border-gray-500 px-3 py-2.5 text-sm text-gray-400 hover:bg-orbitus-card hover:text-white sm:min-h-0 sm:py-2"
+            className="min-h-11 rounded-lg border border-orbitus-border px-3 py-2 text-sm text-gray-500 transition hover:border-red-500/40 hover:text-red-400 sm:min-h-0"
           >
-            Limpar filtros
+            ✕ Limpar
           </button>
         )}
         {displayedList.length > 1 && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 ml-auto">
             <button
               type="button"
               onClick={() => { const nextIndex = clampFocus(focusedIndex - 1); setFocusedIndex(nextIndex); const student = displayedList[nextIndex]; if (student) openModal(student); }}
-              className="rounded border border-gray-600 px-2 py-1 text-gray-400 hover:bg-orbitus-card"
+              className="rounded border border-orbitus-border px-2 py-1.5 text-xs text-gray-500 transition hover:bg-orbitus-card hover:text-white"
               aria-label="Anterior"
             >
               ←
             </button>
-            <span className="px-2 text-sm text-gray-500">{focusedIndex + 1} / {displayedList.length}</span>
+            <span className="px-1.5 text-xs text-gray-600">{focusedIndex + 1}/{displayedList.length}</span>
             <button
               type="button"
               onClick={() => { const nextIndex = clampFocus(focusedIndex + 1); setFocusedIndex(nextIndex); const student = displayedList[nextIndex]; if (student) openModal(student); }}
-              className="rounded border border-gray-600 px-2 py-1 text-gray-400 hover:bg-orbitus-card"
+              className="rounded border border-orbitus-border px-2 py-1.5 text-xs text-gray-500 transition hover:bg-orbitus-card hover:text-white"
               aria-label="Próximo"
             >
               →
@@ -536,44 +536,36 @@ function RosterPage() {
         )}
       </div>
 
-      {rosterFiltersReady && (
-        <p className="mb-3 text-xs text-gray-600">
-          Busca, turma, status, filtro “sem aula” (modo API) e ordenação ficam salvos neste navegador. O atalho “Ver alunos”
-          no Dashboard prioriza a turma do link e substitui a turma salva.
-        </p>
-      )}
-
-      {displayedList.length > 0 && (
-        <p className="mb-4 text-center text-xs text-gray-500">
-          Dica: use ← → para navegar entre {rosterView === 'cards' ? 'os cards' : 'as linhas'} e Enter para abrir a ficha.
-        </p>
-      )}
 
       {showDemoBanner && (
-        <div className="mb-6 rounded-lg border border-amber-500/50 bg-amber-500/10 p-4 text-amber-200">
-          Modo demo — dados de exemplo. Nada é salvo no servidor. Clique num aluno ou use as setas para abrir o modal.
+        <div className="mb-4 rounded-lg border border-orbitus-xp/30 bg-orbitus-xp/8 px-4 py-3 text-sm text-orbitus-xp">
+          🎮 Modo demo — dados de exemplo. Clique num aluno para abrir a ficha.
         </div>
       )}
 
       {error && !showDemoBanner && (
-        <div className="mb-6 rounded-lg border border-red-500/50 bg-red-500/10 p-4 text-red-400">
-          <p>{error}</p>
+        <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/8 px-4 py-3">
+          <p className="text-sm text-red-400">{error}</p>
           <button
             type="button"
             onClick={() => { setError(''); setRetryTrigger((t) => t + 1); }}
-            className="mt-3 rounded bg-red-500/20 px-3 py-1.5 text-sm font-medium text-red-300 hover:bg-red-500/30"
+            className="mt-2 rounded bg-red-500/20 px-3 py-1 text-xs font-medium text-red-300 hover:bg-red-500/30"
           >
-            Tentar de novo
+            Tentar novamente
           </button>
         </div>
       )}
 
       {displayedList.length === 0 && !error && (
-        <div className="rounded-xl border border-dashed border-gray-600 bg-orbitus-card/50 p-12 text-center text-gray-400">
+        <div className="rounded-xl border border-dashed border-orbitus-border bg-orbitus-card/30 p-12 text-center">
           {students.length === 0 ? (
-            <>Nenhum aluno ainda. <Link href="/students/new" className="text-orbitus-accent underline">Cadastre o primeiro</Link> ou crie pela API em <a href={`${API_URL}/api/docs`} target="_blank" rel="noopener noreferrer" className="text-orbitus-accent underline">Swagger</a>.</>
+            <div>
+              <p className="mb-4 text-4xl">🧑‍🎓</p>
+              <p className="mb-4 text-gray-400">Nenhum aluno ainda.</p>
+              <Link href="/students/new" className="btn-primary inline-flex">+ Cadastrar primeiro aluno</Link>
+            </div>
           ) : (
-            <>Nenhum aluno corresponde aos filtros. Tente outra busca ou turma.</>
+            <p className="text-gray-500">Nenhum aluno corresponde aos filtros.</p>
           )}
         </div>
       )}
@@ -588,42 +580,66 @@ function RosterPage() {
       >
         {rosterView === 'cards' ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" role="list">
-            {displayedList.map((s, i) => (
-              <motion.div
-                key={s.id}
-                ref={(el) => { itemRefs.current[i] = el; }}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.03 }}
-                role="button"
-                tabIndex={i === focusedIndex ? 0 : -1}
-                onClick={() => { setFocusedIndex(i); openModal(s); }}
-                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); openModal(s); } }}
-                className="cursor-pointer rounded-xl border border-gray-700 bg-orbitus-card p-5 transition hover:border-orbitus-accent/50 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-orbitus-accent/50"
-              >
-                <div className="mb-3 flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orbitus-accent/20 text-2xl">
-                    {s.avatarType === 'emoji' ? s.avatarValue : '🧑‍🎓'}
+            {displayedList.map((s, i) => {
+              const xpInLevel = (s.xp ?? 0) % 100;
+              const xpPct = xpInLevel;
+              return (
+                <motion.div
+                  key={s.id}
+                  ref={(el) => { itemRefs.current[i] = el; }}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.03 }}
+                  role="button"
+                  tabIndex={i === focusedIndex ? 0 : -1}
+                  onClick={() => { setFocusedIndex(i); openModal(s); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); openModal(s); } }}
+                  className="card-interactive group p-4 focus:outline-none focus:ring-2 focus:ring-orbitus-accent/50"
+                >
+                  <div className="mb-3 flex items-center gap-3">
+                    {/* Avatar */}
+                    <div className="relative shrink-0">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-orbitus-accent/30 to-purple-900/30 text-2xl ring-2 ring-orbitus-border group-hover:ring-orbitus-accent/40 transition">
+                        {s.avatarType === 'emoji' ? s.avatarValue : '🧑‍🎓'}
+                      </div>
+                      {/* Level badge */}
+                      <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-orbitus-accent text-[9px] font-bold text-white ring-2 ring-orbitus-card">
+                        {s.level ?? 1}
+                      </div>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h2 className="truncate font-semibold text-gray-100 group-hover:text-white">{s.displayName}</h2>
+                      <p className="text-xs text-gray-500">{s.classGroup?.name ?? 'Sem turma'}</p>
+                    </div>
+                    <span className={s.status === 'active' ? 'badge-status-active' : 'badge-status-inactive'}>
+                      {s.status === 'active' ? 'ativo' : s.status}
+                    </span>
                   </div>
-                  <div>
-                    <h2 className="font-semibold text-white">{s.displayName}</h2>
-                    <p className="text-xs text-gray-500">{s.classGroup?.name ?? 'Sem turma'} · Nível {s.level}</p>
+
+                  {/* XP bar */}
+                  <div className="mb-3">
+                    <div className="mb-1 flex items-center justify-between">
+                      <span className="text-xs text-gray-500">XP</span>
+                      <span className="badge-xp">{s.xp ?? 0}</span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-orbitus-border">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-orbitus-xp to-amber-400 transition-all duration-500"
+                        style={{ width: `${xpPct}%` }}
+                      />
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-orbitus-xp">XP {s.xp}</span>
-                  <span className={`rounded px-2 py-0.5 text-xs ${s.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}`}>{s.status}</span>
-                </div>
-                <AttentionHintsBadges hints={s.attentionHints} className="mt-2" variant="card" />
-                <p className="mt-3 text-center text-sm text-orbitus-accent">Clique ou Enter para abrir ficha →</p>
-              </motion.div>
-            ))}
+
+                  <AttentionHintsBadges hints={s.attentionHints} className="mb-1" variant="card" />
+                </motion.div>
+              );
+            })}
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-gray-700">
+          <div className="overflow-x-auto rounded-xl border border-orbitus-border">
             <table className="w-full min-w-[640px] border-collapse text-left text-sm">
               <thead>
-                <tr className="border-b border-gray-700 bg-orbitus-card/80 text-xs uppercase tracking-wide text-gray-500">
+                <tr className="border-b border-orbitus-border bg-orbitus-surface text-xs uppercase tracking-wider text-gray-500">
                   <th className="px-4 py-3 font-medium">Aluno</th>
                   <th className="px-4 py-3 font-medium">Turma</th>
                   <th className="px-4 py-3 font-medium">Nível</th>
@@ -643,27 +659,31 @@ function RosterPage() {
                       aria-label={`Abrir ficha de ${s.displayName}`}
                       onClick={() => { setFocusedIndex(i); openModal(s); }}
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); openModal(s); } }}
-                      className={`cursor-pointer border-b border-gray-800 transition hover:bg-orbitus-card/60 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-orbitus-accent/40 ${i === focusedIndex ? 'bg-orbitus-card/40' : ''}`}
+                      className={`cursor-pointer border-b border-orbitus-border/60 transition hover:bg-orbitus-card/60 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-orbitus-accent/40 ${i === focusedIndex ? 'bg-orbitus-card/40' : ''}`}
                     >
-                      <td className="px-4 py-3 font-medium text-white">
+                      <td className="px-4 py-3 font-medium text-gray-100">
                         <span className="mr-2 inline-block w-6 text-center text-base" aria-hidden>
                           {s.avatarType === 'emoji' ? s.avatarValue : '🧑‍🎓'}
                         </span>
                         {s.displayName}
                       </td>
-                      <td className="px-4 py-3 text-gray-400">{s.classGroup?.name ?? '—'}</td>
-                      <td className="px-4 py-3 text-gray-300">{s.level ?? '—'}</td>
-                      <td className="px-4 py-3 text-orbitus-xp">{s.xp ?? 0}</td>
+                      <td className="px-4 py-3 text-gray-500">{s.classGroup?.name ?? '—'}</td>
                       <td className="px-4 py-3">
-                        <span className={`rounded px-2 py-0.5 text-xs ${s.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}`}>
-                          {s.status}
+                        <span className="badge-level">{s.level ?? '—'}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="badge-xp">{s.xp ?? 0}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={s.status === 'active' ? 'badge-status-active' : 'badge-status-inactive'}>
+                          {s.status === 'active' ? 'ativo' : s.status}
                         </span>
                       </td>
                       <td className="px-4 py-3">
                         {attentionHintsVisible(h) ? (
                           <AttentionHintsBadges hints={h} variant="table" />
                         ) : (
-                          <span className="text-gray-600">—</span>
+                          <span className="text-gray-700">—</span>
                         )}
                       </td>
                     </tr>
@@ -681,7 +701,7 @@ function RosterPage() {
             type="button"
             onClick={() => isDemoMode() ? setDisplayCount((c) => c + PAGE_SIZE) : loadMoreApi()}
             disabled={loadingMore}
-            className="rounded-lg border border-orbitus-accent/50 bg-orbitus-accent/10 px-6 py-2 text-orbitus-accent hover:bg-orbitus-accent/20 disabled:opacity-50"
+            className="btn-secondary px-8 disabled:opacity-50"
           >
             {loadingMore ? 'Carregando…' : 'Carregar mais'}
           </button>

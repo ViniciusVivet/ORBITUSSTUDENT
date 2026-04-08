@@ -2,11 +2,107 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Conteúdo principal: menos padding no celular, igual ao desktop a partir de lg */
+@layer base {
+  :root {
+    --font-inter: 'Inter', system-ui, sans-serif;
+  }
+
+  body {
+    background-color: #0f0d1a;
+    background-image:
+      radial-gradient(ellipse at 20% 10%, rgba(109, 40, 217, 0.12) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(6, 182, 212, 0.05) 0%, transparent 50%);
+    background-attachment: fixed;
+  }
+}
+
 @layer components {
   .page-shell {
-    @apply min-h-screen px-4 pb-8 pt-4 sm:px-5 sm:pt-5 lg:px-8 lg:pt-8;
+    @apply min-h-[calc(100vh-3.5rem)] px-4 pb-8 pt-6 sm:px-5 sm:pt-6 lg:px-8 lg:pt-8;
   }
+
+  .card-base {
+    @apply rounded-xl border border-orbitus-border bg-orbitus-card shadow-card transition-all duration-200;
+  }
+
+  .card-interactive {
+    @apply card-base hover:border-orbitus-accent/40 hover:shadow-card-hover hover:bg-orbitus-card-hover cursor-pointer;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-accent px-5 py-2.5 font-semibold text-white shadow-glow-accent transition-all duration-200 hover:shadow-glow-accent-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-orbitus-accent/50;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-orbitus-accent/40 bg-orbitus-accent/10 px-5 py-2.5 font-medium text-orbitus-accent-bright transition-all duration-200 hover:bg-orbitus-accent/20 hover:border-orbitus-accent/60 focus:outline-none focus:ring-2 focus:ring-orbitus-accent/50;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-orbitus-border px-5 py-2.5 font-medium text-gray-300 transition-all duration-200 hover:bg-orbitus-card hover:text-white focus:outline-none;
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-orbitus-accent-bright via-purple-300 to-orbitus-cyan bg-clip-text text-transparent;
+  }
+
+  .badge-xp {
+    @apply inline-flex items-center gap-1 rounded-full bg-orbitus-xp/15 px-2.5 py-0.5 text-xs font-semibold text-orbitus-xp ring-1 ring-orbitus-xp/30;
+  }
+
+  .badge-level {
+    @apply inline-flex items-center justify-center rounded-full bg-orbitus-accent/20 px-2.5 py-0.5 text-xs font-bold text-orbitus-accent-bright ring-1 ring-orbitus-accent/40;
+  }
+
+  .badge-status-active {
+    @apply inline-flex items-center gap-1 rounded-full bg-orbitus-success/15 px-2.5 py-0.5 text-xs font-medium text-emerald-400 ring-1 ring-orbitus-success/30;
+  }
+
+  .badge-status-inactive {
+    @apply inline-flex items-center rounded-full bg-gray-500/15 px-2.5 py-0.5 text-xs font-medium text-gray-400 ring-1 ring-gray-500/30;
+  }
+
+  .input-field {
+    @apply rounded-lg border border-orbitus-border bg-orbitus-surface px-3 py-2 text-white placeholder-gray-500 transition focus:border-orbitus-accent/70 focus:outline-none focus:ring-1 focus:ring-orbitus-accent/30;
+  }
+
+  .section-header {
+    @apply mb-6 flex items-center gap-3;
+  }
+
+  .section-title {
+    @apply text-lg font-semibold text-white;
+  }
+
+  .metric-card {
+    @apply card-base p-5 relative overflow-hidden;
+  }
+
+  .metric-card::before {
+    content: '';
+    @apply absolute inset-x-0 top-0 h-0.5;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0f0d1a;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a2545;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3d3666;
+}
+
+/* Selection */
+::selection {
+  background: rgba(139, 92, 246, 0.3);
+  color: #f3f0ff;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -19,7 +115,7 @@
   }
 }
 
-/* Ficha do aluno: leitura em papel / PDF (window.print) */
+/* Print */
 @media print {
   body {
     background: #fff !important;

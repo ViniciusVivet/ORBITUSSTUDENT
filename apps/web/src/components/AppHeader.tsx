@@ -10,11 +10,21 @@ function getToken(): string | null {
   return localStorage.getItem('token');
 }
 
-function navLinkClass(active: boolean): string {
-  return [
-    'flex min-h-12 items-center rounded-lg px-4 text-base font-medium touch-manipulation transition md:min-h-0 md:px-3 md:text-sm',
-    active ? 'bg-orbitus-accent/20 text-orbitus-accent' : 'text-gray-300 hover:bg-orbitus-card hover:text-white',
-  ].join(' ');
+function NavLink({ href, active, children, onClick }: { href: string; active: boolean; children: React.ReactNode; onClick?: () => void }) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className={[
+        'flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
+        active
+          ? 'bg-orbitus-accent/20 text-orbitus-accent-bright shadow-glow-accent/20'
+          : 'text-gray-400 hover:bg-orbitus-card hover:text-gray-100',
+      ].join(' ')}
+    >
+      {children}
+    </Link>
+  );
 }
 
 export function AppHeader() {
@@ -46,47 +56,65 @@ export function AppHeader() {
   const close = () => setMobileOpen(false);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-gray-700 bg-orbitus-dark/95 backdrop-blur print:hidden">
-      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
-        <nav className="hidden items-center gap-1 md:flex md:gap-2" aria-label="Navegação principal">
-          <Link href="/roster" className={navLinkClass(!!pathname?.startsWith('/roster'))}>
+    <header className="sticky top-0 z-40 border-b border-orbitus-border/80 bg-orbitus-dark/90 backdrop-blur-md print:hidden">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2 shrink-0">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-accent shadow-glow-accent/50 text-sm">
+            ⚔
+          </div>
+          <span className="font-bold text-white tracking-tight hidden sm:block">
+            Orbitus
+          </span>
+        </Link>
+
+        {/* Desktop Nav */}
+        <nav className="hidden items-center gap-1 md:flex" aria-label="Navegação principal">
+          <NavLink href="/roster" active={!!pathname?.startsWith('/roster')}>
             Roster
-          </Link>
-          <Link href="/dashboard" className={navLinkClass(pathname === '/dashboard')}>
+          </NavLink>
+          <NavLink href="/dashboard" active={pathname === '/dashboard'}>
             Dashboard
-          </Link>
-          <Link href="/students/new" className={navLinkClass(pathname === '/students/new')}>
-            Cadastrar aluno
-          </Link>
-          <Link href="/" className="rounded-lg px-3 py-2 text-sm font-medium text-gray-400 transition hover:bg-orbitus-card hover:text-white">
-            Início
-          </Link>
+          </NavLink>
+          <NavLink href="/students/new" active={pathname === '/students/new'}>
+            + Aluno
+          </NavLink>
         </nav>
 
-        <button
-          type="button"
-          className="ml-auto flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-gray-600 text-lg text-gray-200 touch-manipulation md:hidden"
-          aria-expanded={mobileOpen}
-          aria-controls="mobile-nav-menu"
-          onClick={() => setMobileOpen((o) => !o)}
-        >
-          <span className="sr-only">{mobileOpen ? 'Fechar menu' : 'Abrir menu'}</span>
-          {mobileOpen ? '✕' : '☰'}
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Mobile toggle */}
+          <button
+            type="button"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-orbitus-border text-gray-300 transition hover:bg-orbitus-card md:hidden"
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-nav-menu"
+            onClick={() => setMobileOpen((o) => !o)}
+          >
+            <span className="sr-only">{mobileOpen ? 'Fechar menu' : 'Abrir menu'}</span>
+            {mobileOpen ? (
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+            )}
+          </button>
 
-        <button
-          type="button"
-          onClick={logout}
-          className="hidden min-h-10 rounded-lg border border-red-500/50 px-3 py-2 text-sm text-red-400 touch-manipulation hover:bg-red-500/10 md:inline-flex md:items-center"
-        >
-          Sair
-        </button>
+          {/* Logout */}
+          <button
+            type="button"
+            onClick={logout}
+            className="hidden items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/5 px-3 py-1.5 text-sm text-red-400 transition hover:bg-red-500/15 hover:border-red-500/50 md:flex"
+          >
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden><path d="M8.5 4.5l3 3-3 3M11.5 7.5h-7M5.5 2H2a1 1 0 00-1 1v7a1 1 0 001 1h3.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            Sair
+          </button>
+        </div>
       </div>
 
+      {/* Mobile menu */}
       {mobileOpen && (
         <>
           <div
-            className="fixed inset-x-0 bottom-0 top-14 z-50 bg-black/60 md:hidden"
+            className="fixed inset-x-0 bottom-0 top-14 z-50 bg-black/60 backdrop-blur-sm md:hidden"
             aria-hidden
             onClick={close}
           />
@@ -95,33 +123,31 @@ export function AppHeader() {
             role="dialog"
             aria-modal="true"
             aria-label="Menu de navegação"
-            className="fixed left-0 right-0 top-14 z-[60] max-h-[min(70vh,calc(100dvh-3.5rem))] overflow-y-auto border-b border-gray-700 bg-orbitus-dark px-4 py-3 shadow-2xl md:hidden"
-            style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))' }}
+            className="fixed left-0 right-0 top-14 z-[60] border-b border-orbitus-border bg-orbitus-surface px-4 py-4 shadow-2xl md:hidden"
           >
             <nav className="flex flex-col gap-1" aria-label="Navegação principal">
-              <Link href="/roster" onClick={close} className={navLinkClass(!!pathname?.startsWith('/roster'))}>
+              <NavLink href="/roster" active={!!pathname?.startsWith('/roster')} onClick={close}>
                 Roster
-              </Link>
-              <Link href="/dashboard" onClick={close} className={navLinkClass(pathname === '/dashboard')}>
+              </NavLink>
+              <NavLink href="/dashboard" active={pathname === '/dashboard'} onClick={close}>
                 Dashboard
-              </Link>
-              <Link href="/students/new" onClick={close} className={navLinkClass(pathname === '/students/new')}>
-                Cadastrar aluno
-              </Link>
-              <Link href="/" onClick={close} className={navLinkClass(false)}>
+              </NavLink>
+              <NavLink href="/students/new" active={pathname === '/students/new'} onClick={close}>
+                + Cadastrar aluno
+              </NavLink>
+              <NavLink href="/" active={false} onClick={close}>
                 Início
-              </Link>
+              </NavLink>
             </nav>
-            <button
-              type="button"
-              onClick={() => {
-                logout();
-                close();
-              }}
-              className="mt-4 flex min-h-12 w-full items-center justify-center rounded-lg border border-red-500/50 text-base font-medium text-red-400 touch-manipulation hover:bg-red-500/10"
-            >
-              Sair
-            </button>
+            <div className="mt-3 border-t border-orbitus-border pt-3">
+              <button
+                type="button"
+                onClick={() => { logout(); close(); }}
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-500/30 bg-red-500/5 py-2.5 text-sm font-medium text-red-400 transition hover:bg-red-500/15"
+              >
+                Sair
+              </button>
+            </div>
           </div>
         </>
       )}
