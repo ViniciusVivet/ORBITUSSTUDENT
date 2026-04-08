@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useState, useMemo, useRef, useCallback } from 'react';
+import { useEffect, useLayoutEffect, useState, useMemo, useRef, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -24,7 +24,15 @@ function getToken(): string | null {
   return localStorage.getItem('token');
 }
 
-export default function RosterPage() {
+export default function RosterPageWrapper() {
+  return (
+    <Suspense>
+      <RosterPage />
+    </Suspense>
+  );
+}
+
+function RosterPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
