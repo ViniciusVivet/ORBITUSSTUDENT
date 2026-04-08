@@ -3,6 +3,10 @@ export class UpdateBlockerCommand {
     public readonly studentId: string,
     public readonly blockerId: string,
     public readonly teacherUserId: string,
-    public readonly data: { status?: 'active' | 'resolved' },
+    public readonly data: {
+      status?: 'active' | 'resolved';
+      observation?: string | null;
+      tags?: string[];
+    },
   ) {}
 }

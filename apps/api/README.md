@@ -42,6 +42,14 @@ cp .env.example .env
 | `CORS_ORIGIN` | Origem permitida (frontend) | `http://localhost:3000` |
 | `GEMINI_API_KEY` | Chave do Gemini (opcional) | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
 
+## Testes
+
+```bash
+pnpm test
+```
+
+Ou na pasta `apps/api`: `pnpm test` (Jest, handler de listagem de alunos e `sortBy`).
+
 ## Banco de dados
 
 Na raiz do monorepo:

@@ -6,7 +6,8 @@ import { CurrentUser, JwtPayload } from '../common/current-user.decorator';
 import { Roles } from '../common/roles.decorator';
 import { RolesGuard } from '../common/roles.guard';
 import { Role } from '@prisma/client';
-import { ListStudentsQuery } from './queries/list-students.query';
+import { ListStudentsQuery, type ListStudentsSortBy } from './queries/list-students.query';
+import { GetAttentionQueueQuery } from './queries/get-attention-queue.query';
 import { GetStudentByIdQuery } from './queries/get-student-by-id.query';
 import { GetStudentSummaryQuery } from './queries/get-student-summary.query';
 import { ListTopicsQuery } from './queries/list-topics.query';
@@ -17,6 +18,7 @@ import { UpdateBlockerCommand } from './commands/update-blocker.command';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { RegisterLessonDto } from './dto/register-lesson.dto';
 import { AddBlockerDto } from './dto/add-blocker.dto';
+import { UpdateBlockerDto } from './dto/update-blocker.dto';
 import { ListBlockersQuery } from './queries/list-blockers.query';
 import { ListGoalsQuery } from './queries/list-goals.query';
 import { ListClassGroupsQuery } from './queries/list-class-groups.query';
@@ -49,6 +51,16 @@ export class StudentsController {
     return this.queryBus.execute(new ListClassGroupsQuery(user.id));
   }
 
+  @Get('attention-queue')
+  @ApiOperation({ summary: 'Fila de atenção: alunos com bloqueio, meta atrasada ou sem aula recente' })
+  async attentionQueue(
+    @CurrentUser() user: JwtPayload,
+    @Query('limit') limit?: number,
+  ) {
+    const lim = limit != null ? Number(limit) : 12;
+    return this.queryBus.execute(new GetAttentionQueueQuery(user.id, Number.isFinite(lim) ? lim : 12));
+  }
+
   @Get()
   @ApiOperation({ summary: 'Listar alunos' })
   async list(
@@ -59,10 +71,13 @@ export class StudentsController {
     @Query('noLessonSinceDays') noLessonSinceDays?: number,
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
+    @Query('sortBy') sortByRaw?: string,
   ) {
     const days = noLessonSinceDays != null ? Number(noLessonSinceDays) : undefined;
+    const sortBy: ListStudentsSortBy | undefined =
+      sortByRaw === 'xp' || sortByRaw === 'level' || sortByRaw === 'name' ? sortByRaw : undefined;
     return this.queryBus.execute(
-      new ListStudentsQuery(user.id, search, classGroupId, status, days, limit, offset),
+      new ListStudentsQuery(user.id, search, classGroupId, status, days, limit, offset, sortBy),
     );
   }
 
@@ -164,11 +179,15 @@ export class StudentsController {
   async updateBlocker(
     @Param('id') id: string,
     @Param('blockerId') blockerId: string,
-    @Body() body: { status?: 'active' | 'resolved' },
+    @Body() dto: UpdateBlockerDto,
     @CurrentUser() user: JwtPayload,
   ) {
     return this.commandBus.execute(
-      new UpdateBlockerCommand(id, blockerId, user.id, { status: body.status }),
+      new UpdateBlockerCommand(id, blockerId, user.id, {
+        status: dto.status,
+        observation: dto.observation,
+        tags: dto.tags,
+      }),
     );
   }
 

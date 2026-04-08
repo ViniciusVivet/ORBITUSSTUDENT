@@ -8,6 +8,22 @@ export type GoalStatus = 'pending' | 'in_progress' | 'completed';
 
 export type AvatarType = 'template' | 'emoji' | 'photo';
 
+/** Sinais para triagem no Roster (badges e fila de atenção). */
+export interface StudentAttentionHints {
+  activeBlockersCount: number;
+  overdueGoalsCount: number;
+  /** `null` = nunca teve aula registrada */
+  daysSinceLastLesson: number | null;
+}
+
+export interface AttentionQueueItem {
+  studentId: string;
+  displayName: string;
+  classGroup: { id: string; name: string } | null;
+  reasons: string[];
+  score: number;
+}
+
 export interface StudentListItem {
   id: string;
   displayName: string;
@@ -19,6 +35,7 @@ export interface StudentListItem {
   xp: number;
   status: StudentStatus;
   classGroup?: { id: string; name: string } | null;
+  attentionHints?: StudentAttentionHints;
 }
 
 export interface StudentSummary {

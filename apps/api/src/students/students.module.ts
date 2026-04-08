@@ -8,6 +8,7 @@ import { ListTopicsHandler } from './queries/list-topics.handler';
 import { ListBlockersHandler } from './queries/list-blockers.handler';
 import { ListGoalsHandler } from './queries/list-goals.handler';
 import { ListClassGroupsHandler } from './queries/list-class-groups.handler';
+import { GetAttentionQueueHandler } from './queries/get-attention-queue.handler';
 import { CreateStudentHandler } from './commands/create-student.handler';
 import { UpdateStudentHandler } from './commands/update-student.handler';
 import { RegisterLessonHandler } from './commands/register-lesson.handler';
@@ -24,6 +25,7 @@ const QueryHandlers = [
   ListBlockersHandler,
   ListGoalsHandler,
   ListClassGroupsHandler,
+  GetAttentionQueueHandler,
 ];
 const CommandHandlers = [
   CreateStudentHandler,

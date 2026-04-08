@@ -1,3 +1,5 @@
+export type ListStudentsSortBy = 'name' | 'xp' | 'level';
+
 export class ListStudentsQuery {
   constructor(
     public readonly teacherUserId: string,
@@ -7,5 +9,6 @@ export class ListStudentsQuery {
     public readonly noLessonSinceDays?: number,
     public readonly limit?: number,
     public readonly offset?: number,
+    public readonly sortBy?: ListStudentsSortBy,
   ) {}
 }
