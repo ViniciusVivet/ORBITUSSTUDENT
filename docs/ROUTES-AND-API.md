@@ -40,8 +40,9 @@ Swagger: `http://localhost:3001/api/docs`.
 
 | Método | Endpoint | Uso no frontend |
 |--------|----------|------------------|
-| GET | `/students` | `app/roster/page.tsx` — lista (search, classGroupId, status, noLessonSinceDays, limit, offset) |
+| GET | `/students` | `app/roster/page.tsx` — lista (search, classGroupId, status, noLessonSinceDays, limit, offset, **sortBy** name \| xp \| level); cada item pode incluir **attentionHints** (bloqueios, metas atrasadas, dias desde última aula) |
 | GET | `/students/class-groups` | `app/students/new/page.tsx`, `app/students/[id]/page.tsx` — select de turma |
+| GET | `/students/attention-queue` | `app/roster/page.tsx` — fila de atenção (prioridade: bloqueio, meta atrasada, sem aula 7d) |
 | GET | `/students/topics` | `app/students/[id]/page.tsx` — select de tópico ao registrar aula |
 | GET | `/students/:id` | (Swagger / uso futuro; a ficha usa summary) |
 | GET | `/students/:id/summary` | `app/students/[id]/page.tsx`, `StudentModal.tsx` — resumo do aluno |
@@ -50,7 +51,7 @@ Swagger: `http://localhost:3001/api/docs`.
 | POST | `/students/:id/lessons` | `app/students/[id]/page.tsx` — registrar aula |
 | GET | `/students/:id/blockers` | `app/students/[id]/page.tsx` — listar bloqueios |
 | POST | `/students/:id/blockers` | `app/students/[id]/page.tsx` — criar bloqueio |
-| PATCH | `/students/:id/blockers/:blockerId` | `app/students/[id]/page.tsx` — resolver bloqueio |
+| PATCH | `/students/:id/blockers/:blockerId` | `app/students/[id]/page.tsx` — resolver bloqueio; opcional `observation`, `tags` (nota rápida) |
 | GET | `/students/:id/goals` | `app/students/[id]/page.tsx` — listar metas |
 | POST | `/students/:id/goals` | `app/students/[id]/page.tsx` — criar meta |
 | PATCH | `/students/:id/goals/:goalId` | `app/students/[id]/page.tsx` — atualizar meta (em andamento / concluída) |

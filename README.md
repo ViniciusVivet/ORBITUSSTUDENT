@@ -55,13 +55,9 @@ OrbitusStudent/
 ├── packages/
 │   └── shared/                        # Tipos e DTOs compartilhados (@orbitus/shared)
 ├── docs/
-│   ├── SPEC-ORBITUS-CLASSROOM-RPG.md   # Especificação completa
-│   ├── PROJECT-STATUS.md              # Status e modo demo
-│   ├── ROUTES-AND-API.md               # Rotas frontend ↔ endpoints API
-│   ├── IMPROVEMENTS.md                 # Melhorias 1–14
-│   ├── IMPROVEMENTS-ROUND2.md          # Melhorias rodada 2
-│   ├── IMPROVEMENTS-ROUND3.md          # Melhorias rodada 3 (por impacto)
-│   └── prisma-schema-reference.prisma
+│   ├── SPEC-ORBITUS-CLASSROOM-RPG.md   # produto + arquitetura
+│   ├── PROJECT-STATUS.md               # status, demo, mocks
+│   └── ROUTES-AND-API.md               # rotas ↔ API
 ├── docker-compose.yml                 # PostgreSQL
 ├── package.json                       # scripts raiz (dev:api, dev:web, db:*)
 └── pnpm-workspace.yaml
@@ -73,8 +69,8 @@ OrbitusStudent/
 
 | Área | Recursos |
 |------|----------|
-| **Frontend** | Login, modo demo, Roster com busca (**debounce**), filtros (turma, status, sem aula há 7+/14+ dias), **ordenação** (nome, XP, nível), **paginação / "Carregar mais"**, **exportar CSV**, **Roster lê classGroupId da URL** (link "Ver alunos" do Dashboard), cadastro com **turma**, modal do aluno (**focus trap**, Escape fecha), ficha com **editar dados**, **breadcrumb**, **toast acessível** (aria-live), **mensagens de validação** claras nos formulários, metas com **destaque de prazo** e **confirmação ao concluir**, dashboard com **Por turma** e **empty state**, Insights IA e chat (Gemini), **navegação global**, **404**, **error boundary**, **skip link**, **título por página**, **loading skeleton** (Roster e ficha), **"Tentar de novo"** em falhas (Roster e ficha), responsivo e reduced-motion. |
-| **Backend** | Auth JWT, CRUD e **PATCH** de alunos, **listar turmas** (class-groups), resumo e summary, tópicos, registrar aula (XP/habilidades), dashboard overview e **by-class**, **noLessonSinceDays**, **limit/offset** em list students, bloqueios, metas, **módulo AI** (chat e insights com Gemini). |
+| **Frontend** | Login, modo demo, Roster com busca (**debounce**), filtros (turma, status, sem aula há 7+/14+ dias), **ordenação** (nome, XP, nível), **paginação / "Carregar mais"**, **exportar CSV** e **relatório CSV** (filtro atual + triagem), **Roster em cards ou tabela**, **filtros do Roster salvos no navegador** (busca, turma, status, sem aula, ordenação; link do Dashboard prioriza turma na URL), **Roster lê classGroupId da URL** (link "Ver alunos" do Dashboard), cadastro com **turma**, modal do aluno (**focus trap**, Escape, **avatar 3D** R3F + fallback 2D/`prefers-reduced-motion`, foto sem WebGL, **badges de triagem** iguais ao Roster), ficha com **editar dados**, **imprimir ficha** (Ctrl+P / PDF pelo navegador), **breadcrumb**, **toast acessível** (aria-live), **mensagens de validação** claras nos formulários, metas com **destaque de prazo** e **confirmação ao concluir**, **bloqueios com tags** e **nota rápida** (edição inline + API), dashboard com **Por turma** e **empty state**, Insights IA e chat (Gemini), **navegação global**, **404**, **error boundary**, **skip link**, **título por página**, **loading skeleton** (Roster e ficha), **"Tentar de novo"** em falhas (Roster e ficha), responsivo e reduced-motion. |
+| **Backend** | Auth JWT, CRUD e **PATCH** de alunos, **listar turmas** (class-groups), resumo e summary, tópicos, registrar aula (XP/habilidades), dashboard overview e **by-class**, **noLessonSinceDays**, **limit/offset** em list students, bloqueios (**PATCH** com `observation` / `tags`), metas, **módulo AI** (chat e insights com Gemini). |
 | **Infra** | Monorepo pnpm, Prisma + PostgreSQL, Docker Compose para o banco, Swagger em **http://localhost:3001/api/docs**. **Frontend e API** documentados: `apps/web/README.md`, `apps/api/README.md`; **rotas e conexão** em [docs/ROUTES-AND-API.md](docs/ROUTES-AND-API.md); **variáveis de ambiente** em `apps/api/.env.example` e `apps/web/.env.example`. |
 
 ---
@@ -83,10 +79,11 @@ OrbitusStudent/
 
 | Item | Descrição |
 |------|-----------|
-| **Avatar 3D no modal** | Renderização 3D (ex.: R3F) no modal do aluno, com fallback 2D. |
 | **V2 (especificação)** | PWA, sync offline, mais insights automáticos. |
 
-Detalhes em [docs/SPEC-ORBITUS-CLASSROOM-RPG.md](docs/SPEC-ORBITUS-CLASSROOM-RPG.md) e [docs/PROJECT-STATUS.md](docs/PROJECT-STATUS.md).
+**Feito:** avatar no modal com **cena 3D** (React Three Fiber + orbe icosaédrico), **fallback 2D** (só emoji) com `prefers-reduced-motion`, e **foto** sem WebGL.
+
+Visão de produto e arquitetura: [docs/SPEC-ORBITUS-CLASSROOM-RPG.md](docs/SPEC-ORBITUS-CLASSROOM-RPG.md). Estado e demo: [docs/PROJECT-STATUS.md](docs/PROJECT-STATUS.md).
 
 ---
 
@@ -186,6 +183,28 @@ Site em **http://localhost:3000**.
 
 ---
 
+## 🧪 Testes automatizados
+
+Na raiz do monorepo (API com Jest + web com Vitest):
+
+```bash
+pnpm test
+```
+
+Ou por app:
+
+```bash
+pnpm --filter api test
+pnpm --filter web test
+```
+
+- **API:** `list-students.handler.spec.ts` — valida `orderBy` do `GET /students` conforme `sortBy` (`name`, `xp`, `level`).
+- **Web:** `csv-export.test.ts` — valida escape e geração do CSV do Roster.
+
+Antes de rodar a API em produção, execute `pnpm db:generate` na API para o Prisma gerar o client.
+
+---
+
 ## 📋 Resumo rápido
 
 | O quê | Comando / Onde |
@@ -198,6 +217,7 @@ Site em **http://localhost:3000**.
 | Ligar site | `pnpm dev:web` (terminal 2) |
 | Abrir o site | http://localhost:3000 |
 | Login de teste | `prof@escola.com` / `senha123` |
+| Rodar testes | `pnpm test` |
 
 ---
 
@@ -207,7 +227,6 @@ Site em **http://localhost:3000**.
 |-----|-----------|
 | [**Status do projeto e modo demo**](docs/PROJECT-STATUS.md) | O que está pronto, o que é mock, o que depende da API. |
 | [**Rotas e conexão Frontend ↔ API**](docs/ROUTES-AND-API.md) | Todas as rotas do frontend e endpoints da API com onde são usados. |
-| [**Especificação completa**](docs/SPEC-ORBITUS-CLASSROOM-RPG.md) | Escopo, arquitetura, modelo de dados, backlog. |
-| [**Melhorias (rodadas 1–3)**](docs/IMPROVEMENTS.md) | Listas de melhorias implementadas (docs/IMPROVEMENTS-ROUND2.md, IMPROVEMENTS-ROUND3.md). |
+| [**Especificação**](docs/SPEC-ORBITUS-CLASSROOM-RPG.md) | Fases MVP/V2/V3, arquitetura, CQRS, UX/padrões (sem duplicar rotas — ver ROUTES-AND-API). |
 | **apps/web/README.md** | Como rodar o frontend, env, estrutura. |
 | **apps/api/README.md** | Como rodar a API, env, banco, estrutura. |

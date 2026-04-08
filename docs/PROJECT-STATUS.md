@@ -113,19 +113,18 @@ Ou seja: o mesmo frontend funciona em **modo demo (só mocks)** ou **com API e b
 
 ## Próximos passos sugeridos (especificação)
 
-Conforme o **docs/SPEC-ORBITUS-CLASSROOM-RPG.md**:
+Conforme o **[SPEC-ORBITUS-CLASSROOM-RPG.md](SPEC-ORBITUS-CLASSROOM-RPG.md)** e o README raiz:
 
-1. **Avatar 3D** no modal (R3F) e fallback 2D.
-2. V2: PWA, sync, mais insights automáticos.
+- **V2:** PWA, sync offline, mais insights automáticos (além do Gemini já usado no Dashboard).
 
----
+**Modelo de dados (Prisma):** fonte única em `apps/api/prisma/schema.prisma` (não há cópia em `docs/`).
 
 ---
 
 ## Documentação de rotas e conexão
 
-Todas as **rotas do frontend** e **endpoints da API** estão mapeados em [docs/ROUTES-AND-API.md](ROUTES-AND-API.md). Frontend e API estão totalmente conectados; variáveis de ambiente em `apps/api/.env.example` e `apps/web/.env.example`.
+Todas as **rotas do frontend** e **endpoints da API** estão mapeados em [ROUTES-AND-API.md](ROUTES-AND-API.md). Frontend e API estão conectados; variáveis de ambiente em `apps/api/.env.example` e `apps/web/.env.example`.
 
 ---
 
-*Última atualização: fev/2025 — round 2 e 3 (paginação, validação, skeleton, debounce, error boundary, retry, empty state, focus trap, toast acessível); doc atualizado.*
+*Última revisão: abr/2026 — limpeza de docs obsoletos; estado funcional alinhado ao README.*
