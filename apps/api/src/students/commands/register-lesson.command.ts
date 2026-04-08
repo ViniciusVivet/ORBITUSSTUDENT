@@ -3,7 +3,7 @@ export class RegisterLessonCommand {
     public readonly studentId: string,
     public readonly teacherUserId: string,
     public readonly data: {
-      topicId: string;
+      topicId?: string;
       heldAt: Date;
       durationMinutes: number;
       rating: number;

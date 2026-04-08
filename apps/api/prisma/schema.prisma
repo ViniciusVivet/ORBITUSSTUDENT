@@ -155,16 +155,16 @@ model Lesson {
   teacherUserId   String   @map("teacher_user_id")
   heldAt          DateTime @map("held_at")
   durationMinutes Int      @map("duration_minutes")
-  topicId         String   @map("topic_id")
+  topicId         String?  @map("topic_id")
   rating          Int
   notes           String?  @db.Text
   xpEarned        Int      @map("xp_earned")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
-  student    Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  student    Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
   teacherUser TeacherUser @relation(fields: [teacherUserId], references: [id], onDelete: Restrict)
-  topic      Topic      @relation(fields: [topicId], references: [id], onDelete: Restrict)
+  topic      Topic?      @relation(fields: [topicId], references: [id], onDelete: SetNull)
 
   @@index([studentId, heldAt(sort: Desc)])
   @@map("lessons")

@@ -185,7 +185,6 @@ export default function StudentPage() {
     const rating = parseInt((form.elements.namedItem('rating') as HTMLSelectElement)?.value || '0', 10);
     const notes = (form.elements.namedItem('notes') as HTMLTextAreaElement)?.value?.trim() || undefined;
     setLessonError('');
-    if (!topicId) { setLessonError('Selecione o tópico.'); return; }
     if (!heldAt) { setLessonError('Informe a data e hora da aula.'); return; }
     if (durationMinutes < 1) { setLessonError('Duração deve ser de pelo menos 1 minuto.'); return; }
     if (rating < 1) { setLessonError('Selecione a avaliação (1 a 5 estrelas).'); return; }
@@ -502,13 +501,12 @@ export default function StudentPage() {
           {showLessonForm && (
             <form onSubmit={handleRegisterLesson} className="space-y-3">
               <div>
-                <label className="mb-1 block text-sm text-gray-400">Tópico</label>
+                <label className="mb-1 block text-sm text-gray-400">Tópico (opcional)</label>
                 <select
                   name="topicId"
-                  required
                   className="w-full rounded-lg border border-gray-600 bg-orbitus-dark px-3 py-2 text-white focus:border-orbitus-accent focus:outline-none"
                 >
-                  <option value="">Selecione</option>
+                  <option value="">— Aula Livre —</option>
                   {topics.map((t) => (
                     <option key={t.id} value={t.id}>{t.name}</option>
                   ))}

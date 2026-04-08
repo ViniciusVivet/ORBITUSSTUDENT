@@ -1,5 +1,5 @@
 import { ICommandHandler, CommandHandler } from '@nestjs/cqrs';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { RegisterLessonCommand } from './register-lesson.command';
 
@@ -17,11 +17,22 @@ export class RegisterLessonHandler implements ICommandHandler<RegisterLessonComm
     });
     if (!student) throw new NotFoundException('Aluno não encontrado');
 
-    const topic = await this.prisma.topic.findUnique({
-      where: { id: data.topicId },
-      include: { skills: { include: { skill: true } } },
-    });
-    if (!topic) throw new BadRequestException('Tópico não encontrado');
+    let topic = data.topicId
+      ? await this.prisma.topic.findUnique({
+          where: { id: data.topicId },
+          include: { skills: { include: { skill: true } } },
+        })
+      : null;
+
+    // Se não encontrou pelo ID informado, cria/busca tópico "Aula Livre"
+    if (!topic) {
+      topic = await this.prisma.topic.upsert({
+        where: { slug: 'aula-livre' },
+        update: {},
+        create: { name: 'Aula Livre', slug: 'aula-livre', xpWeight: 1 },
+        include: { skills: { include: { skill: true } } },
+      });
+    }
 
     const xpEarned = Math.round(
       data.rating * data.durationMinutes * topic.xpWeight * 0.1,
@@ -35,7 +46,7 @@ export class RegisterLessonHandler implements ICommandHandler<RegisterLessonComm
           teacherUserId,
           heldAt,
           durationMinutes: data.durationMinutes,
-          topicId: data.topicId,
+          topicId: topic.id,
           rating: data.rating,
           notes: data.notes ?? null,
           xpEarned,

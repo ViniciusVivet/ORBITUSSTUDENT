@@ -2,9 +2,10 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsInt, Min, Max, IsOptional, IsDateString } from 'class-validator';
 
 export class RegisterLessonDto {
-  @ApiProperty({ description: 'ID do tópico da aula' })
+  @ApiPropertyOptional({ description: 'ID do tópico da aula (opcional)' })
+  @IsOptional()
   @IsString()
-  topicId: string;
+  topicId?: string;
 
   @ApiProperty({ example: '2025-02-09T14:00:00.000Z' })
   @IsDateString()
