@@ -112,6 +112,12 @@ export default function StudentPage() {
   }, [id]);
 
   useEffect(() => {
+    if (typeof document !== 'undefined' && summary?.student?.displayName) {
+      document.title = `Ficha de ${summary.student.displayName} — Orbitus`;
+    }
+  }, [summary?.student?.displayName]);
+
+  useEffect(() => {
     if (!id) return;
     const token = getToken();
     if (!token) {
@@ -283,10 +289,6 @@ export default function StudentPage() {
   }
 
   const { student, lastLessons, skillBars, activeBlockersCount, activeGoalsCount } = summary;
-
-  useEffect(() => {
-    if (typeof document !== 'undefined' && student?.displayName) document.title = `Ficha de ${student.displayName} — Orbitus`;
-  }, [student?.displayName]);
 
   const generatedAtLabel = new Date().toLocaleString('pt-BR', {
     dateStyle: 'long',
