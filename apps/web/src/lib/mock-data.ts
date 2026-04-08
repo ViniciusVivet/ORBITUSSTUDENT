@@ -309,3 +309,38 @@ export const MOCK_DASHBOARD_CARDS = [
   { title: 'Top bloqueios por tópico', value: 'Lógica', subtitle: '4 ocorrências' },
   { title: 'Tempo médio por tema', value: '45 min', subtitle: 'últimas 2 semanas' },
 ];
+
+export const MOCK_ATTENDANCE: Record<string, { date: string; status: 'present' | 'absent' | 'late' | 'makeup'; note?: string }[]> = {
+  'mock-1': [
+    { date: new Date(Date.now() - 7 * 86400000).toISOString().substring(0, 10), status: 'present' },
+    { date: new Date(Date.now() - 14 * 86400000).toISOString().substring(0, 10), status: 'absent', note: 'Faltou sem aviso' },
+    { date: new Date(Date.now() - 21 * 86400000).toISOString().substring(0, 10), status: 'present' },
+  ],
+  'mock-2': [
+    { date: new Date(Date.now() - 7 * 86400000).toISOString().substring(0, 10), status: 'late' },
+    { date: new Date(Date.now() - 14 * 86400000).toISOString().substring(0, 10), status: 'present' },
+  ],
+};
+
+export const MOCK_SESSIONS = [
+  {
+    id: 'sess-1',
+    classGroupId: 'g1',
+    heldAt: new Date(Date.now() - 7 * 86400000).toISOString(),
+    durationMinutes: 90,
+    topicName: 'Introdução ao HTML',
+    notes: 'Turma engajada, maioria entendeu o conceito.',
+    createdAt: new Date(Date.now() - 7 * 86400000).toISOString(),
+    attendanceCount: 3,
+  },
+  {
+    id: 'sess-2',
+    classGroupId: 'g1',
+    heldAt: new Date(Date.now() - 14 * 86400000).toISOString(),
+    durationMinutes: 90,
+    topicName: 'Lógica de programação',
+    notes: null,
+    createdAt: new Date(Date.now() - 14 * 86400000).toISOString(),
+    attendanceCount: 2,
+  },
+];

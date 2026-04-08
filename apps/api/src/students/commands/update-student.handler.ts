@@ -18,6 +18,9 @@ export class UpdateStudentHandler implements ICommandHandler<UpdateStudentComman
     if (command.data.fullName !== undefined) data.fullName = command.data.fullName?.trim() ?? null;
     if (command.data.classGroupId !== undefined) data.classGroupId = command.data.classGroupId ?? null;
     if (command.data.status !== undefined) data.status = command.data.status;
+    if (command.data.weekDays !== undefined) data.weekDays = command.data.weekDays;
+    if (command.data.courseStartAt !== undefined) data.courseStartAt = command.data.courseStartAt ? new Date(command.data.courseStartAt) : null;
+    if (command.data.courseEndAt !== undefined) data.courseEndAt = command.data.courseEndAt ? new Date(command.data.courseEndAt) : null;
 
     return this.prisma.student.update({
       where: { id: command.studentId },

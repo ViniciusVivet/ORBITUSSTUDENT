@@ -36,6 +36,9 @@ export interface StudentListItem {
   status: StudentStatus;
   classGroup?: { id: string; name: string } | null;
   attentionHints?: StudentAttentionHints;
+  weekDays?: number[];
+  courseStartAt?: string | null;
+  courseEndAt?: string | null;
 }
 
 export interface StudentSummary {
@@ -65,4 +68,36 @@ export interface ApiError {
   message: string | string[];
   timestamp: string;
   path: string;
+}
+
+export type AttendanceStatus = 'present' | 'absent' | 'late' | 'makeup';
+
+export interface AttendanceRecord {
+  id: string;
+  studentId: string;
+  date: string;
+  status: AttendanceStatus;
+  note?: string | null;
+  createdAt: string;
+}
+
+export interface ClassSessionItem {
+  id: string;
+  classGroupId: string;
+  heldAt: string;
+  durationMinutes: number;
+  topicName?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  attendanceCount: number;
+}
+
+export interface ClassGroupDetail {
+  id: string;
+  name: string;
+  course?: string | null;
+  academicPeriod?: string | null;
+  studentCount: number;
+  students: StudentListItem[];
+  sessions: ClassSessionItem[];
 }

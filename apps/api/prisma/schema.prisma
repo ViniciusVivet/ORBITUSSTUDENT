@@ -36,6 +36,13 @@ enum AvatarType {
   photo
 }
 
+enum AttendanceStatus {
+  present
+  absent
+  late
+  makeup
+}
+
 model TeacherUser {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -48,6 +55,7 @@ model TeacherUser {
   lessons         Lesson[]
   blockers        Blocker[]
   goals           Goal[]
+  classSessions   ClassSession[]
 
   @@map("teacher_users")
 }
@@ -61,6 +69,7 @@ model ClassGroup {
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   students Student[]
+  sessions ClassSession[]
 
   @@map("class_groups")
 }
@@ -77,6 +86,9 @@ model Student {
   level         Int           @default(1)
   xp            Int           @default(0)
   status        StudentStatus @default(active)
+  weekDays      Int[]     @default([])
+  courseStartAt DateTime? @map("course_start_at")
+  courseEndAt   DateTime? @map("course_end_at")
   createdAt     DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime      @updatedAt @map("updated_at")
 
@@ -86,6 +98,8 @@ model Student {
   skillProgress SkillProgress[]
   blockers      Blocker[]
   goals         Goal[]
+  attendanceRecords  AttendanceRecord[]
+  sessionAttendances SessionAttendance[]
 
   @@index([teacherUserId])
   @@index([classGroupId])
@@ -104,6 +118,7 @@ model Topic {
 
   skills  TopicSkill[]
   lessons Lesson[]
+  classSessions ClassSession[]
 
   @@map("topics")
 }
@@ -211,4 +226,55 @@ model Goal {
   @@index([studentId])
   @@index([status])
   @@map("goals")
+}
+
+model AttendanceRecord {
+  id        String           @id @default(cuid())
+  studentId String           @map("student_id")
+  date      DateTime         @db.Date
+  status    AttendanceStatus
+  note      String?          @db.Text
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, date])
+  @@index([studentId])
+  @@map("attendance_records")
+}
+
+model ClassSession {
+  id              String   @id @default(cuid())
+  classGroupId    String   @map("class_group_id")
+  teacherUserId   String   @map("teacher_user_id")
+  heldAt          DateTime @map("held_at")
+  durationMinutes Int      @map("duration_minutes")
+  topicId         String?  @map("topic_id")
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  classGroup  ClassGroup          @relation(fields: [classGroupId], references: [id], onDelete: Cascade)
+  teacherUser TeacherUser         @relation(fields: [teacherUserId], references: [id], onDelete: Restrict)
+  topic       Topic?              @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  attendances SessionAttendance[]
+
+  @@index([classGroupId, heldAt(sort: Desc)])
+  @@map("class_sessions")
+}
+
+model SessionAttendance {
+  id        String           @id @default(cuid())
+  sessionId String           @map("session_id")
+  studentId String           @map("student_id")
+  status    AttendanceStatus
+  note      String?          @db.Text
+  grade     Float?
+
+  session ClassSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, studentId])
+  @@index([sessionId])
+  @@index([studentId])
+  @@map("session_attendances")
 }

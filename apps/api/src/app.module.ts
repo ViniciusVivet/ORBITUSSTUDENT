@@ -5,8 +5,9 @@ import { AuthModule } from './auth/auth.module';
 import { StudentsModule } from './students/students.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { AiModule } from './ai/ai.module';
+import { ClassGroupsModule } from './class-groups/class-groups.module';
 
 @Module({
-  imports: [CqrsModule, PrismaModule, AuthModule, StudentsModule, DashboardModule, AiModule],
+  imports: [CqrsModule, PrismaModule, AuthModule, StudentsModule, DashboardModule, AiModule, ClassGroupsModule],
 })
 export class AppModule {}

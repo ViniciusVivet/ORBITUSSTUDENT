@@ -9,6 +9,9 @@ export class UpdateStudentCommand {
       fullName?: string | null;
       classGroupId?: string | null;
       status?: StudentStatus;
+      weekDays?: number[];
+      courseStartAt?: string | null;
+      courseEndAt?: string | null;
     },
   ) {}
 }

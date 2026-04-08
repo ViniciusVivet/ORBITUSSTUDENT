@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -27,6 +28,9 @@ import { UpdateGoalCommand } from './commands/update-goal.command';
 import { CreateGoalDto } from './dto/create-goal.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { UpdateStudentCommand } from './commands/update-student.command';
+import { GetStudentAttendanceQuery } from './queries/get-student-attendance.query';
+import { UpsertAttendanceCommand } from './commands/upsert-attendance.command';
+import { UpsertAttendanceDto } from './dto/upsert-attendance.dto';
 
 @ApiTags('students')
 @ApiBearerAuth()
@@ -104,6 +108,9 @@ export class StudentsController {
         classGroupId: dto.classGroupId,
         avatarType: dto.avatarType,
         avatarValue: dto.avatarValue,
+        weekDays: dto.weekDays,
+        courseStartAt: dto.courseStartAt,
+        courseEndAt: dto.courseEndAt,
       }),
     );
   }
@@ -122,6 +129,9 @@ export class StudentsController {
         fullName: dto.fullName,
         classGroupId: dto.classGroupId,
         status: dto.status,
+        weekDays: dto.weekDays,
+        courseStartAt: dto.courseStartAt,
+        courseEndAt: dto.courseEndAt,
       }),
     );
   }
@@ -199,6 +209,28 @@ export class StudentsController {
     @CurrentUser() user: JwtPayload,
   ) {
     return this.queryBus.execute(new ListGoalsQuery(id, user.id, status));
+  }
+
+  @Get(':id/attendance')
+  @ApiOperation({ summary: 'Listar frequência do aluno por mês (YYYY-MM)' })
+  async getAttendance(
+    @Param('id') id: string,
+    @Query('month') month: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    const m = month ?? new Date().toISOString().substring(0, 7);
+    return this.queryBus.execute(new GetStudentAttendanceQuery(id, user.id, m));
+  }
+
+  @Post(':id/attendance')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Registrar/atualizar frequência do aluno' })
+  async upsertAttendance(
+    @Param('id') id: string,
+    @Body() dto: UpsertAttendanceDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.commandBus.execute(new UpsertAttendanceCommand(id, user.id, dto));
   }
 
   @Post(':id/goals')

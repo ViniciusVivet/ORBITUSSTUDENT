@@ -16,6 +16,9 @@ export class CreateStudentHandler implements ICommandHandler<CreateStudentComman
         classGroupId: data.classGroupId || null,
         avatarType: data.avatarType,
         avatarValue: data.avatarValue,
+        weekDays: data.weekDays ?? [],
+        courseStartAt: data.courseStartAt ? new Date(data.courseStartAt) : null,
+        courseEndAt: data.courseEndAt ? new Date(data.courseEndAt) : null,
       },
       include: { classGroup: { select: { id: true, name: true } } },
     });

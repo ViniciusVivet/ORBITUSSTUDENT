@@ -8,6 +8,7 @@ import { RolesGuard } from '../common/roles.guard';
 import { Role } from '@prisma/client';
 import { GetDashboardOverviewQuery } from './queries/get-dashboard-overview.query';
 import { GetDashboardByClassQuery } from './queries/get-dashboard-by-class.query';
+import { GetTodayOverviewQuery } from './queries/get-today-overview.query';
 
 @ApiTags('dashboard')
 @ApiBearerAuth()
@@ -27,5 +28,10 @@ export class DashboardController {
   @ApiOperation({ summary: 'Resumo por turma (alunos, XP, bloqueios)' })
   async byClass(@CurrentUser() user: JwtPayload) {
     return this.queryBus.execute(new GetDashboardByClassQuery(user.id));
+  }
+
+  @Get('today')
+  async today(@CurrentUser() user: JwtPayload) {
+    return this.queryBus.execute(new GetTodayOverviewQuery(user.id));
   }
 }

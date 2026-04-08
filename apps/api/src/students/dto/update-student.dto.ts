@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsArray, IsInt, Min, Max, IsDateString } from 'class-validator';
 import { StudentStatus } from '@prisma/client';
 
 export class UpdateStudentDto {
@@ -22,4 +22,19 @@ export class UpdateStudentDto {
   @IsOptional()
   @IsEnum(StudentStatus)
   status?: StudentStatus;
+
+  @IsOptional()
+  @IsArray()
+  @IsInt({ each: true })
+  @Min(0, { each: true })
+  @Max(6, { each: true })
+  weekDays?: number[];
+
+  @IsOptional()
+  @IsDateString()
+  courseStartAt?: string | null;
+
+  @IsOptional()
+  @IsDateString()
+  courseEndAt?: string | null;
 }

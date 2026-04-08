@@ -9,6 +9,7 @@ import { ListBlockersHandler } from './queries/list-blockers.handler';
 import { ListGoalsHandler } from './queries/list-goals.handler';
 import { ListClassGroupsHandler } from './queries/list-class-groups.handler';
 import { GetAttentionQueueHandler } from './queries/get-attention-queue.handler';
+import { GetStudentAttendanceHandler } from './queries/get-student-attendance.handler';
 import { CreateStudentHandler } from './commands/create-student.handler';
 import { UpdateStudentHandler } from './commands/update-student.handler';
 import { RegisterLessonHandler } from './commands/register-lesson.handler';
@@ -16,6 +17,7 @@ import { AddBlockerHandler } from './commands/add-blocker.handler';
 import { UpdateBlockerHandler } from './commands/update-blocker.handler';
 import { CreateGoalHandler } from './commands/create-goal.handler';
 import { UpdateGoalHandler } from './commands/update-goal.handler';
+import { UpsertAttendanceHandler } from './commands/upsert-attendance.handler';
 
 const QueryHandlers = [
   ListStudentsHandler,
@@ -26,6 +28,7 @@ const QueryHandlers = [
   ListGoalsHandler,
   ListClassGroupsHandler,
   GetAttentionQueueHandler,
+  GetStudentAttendanceHandler,
 ];
 const CommandHandlers = [
   CreateStudentHandler,
@@ -35,6 +38,7 @@ const CommandHandlers = [
   UpdateBlockerHandler,
   CreateGoalHandler,
   UpdateGoalHandler,
+  UpsertAttendanceHandler,
 ];
 
 @Module({

@@ -70,6 +70,12 @@ export function AppHeader() {
 
         {/* Desktop Nav */}
         <nav className="hidden items-center gap-1 md:flex" aria-label="Navegação principal">
+          <NavLink href="/hoje" active={pathname === '/hoje'}>
+            Hoje
+          </NavLink>
+          <NavLink href="/turmas" active={!!pathname?.startsWith('/turmas')}>
+            Turmas
+          </NavLink>
           <NavLink href="/roster" active={!!pathname?.startsWith('/roster')}>
             Roster
           </NavLink>
@@ -126,6 +132,12 @@ export function AppHeader() {
             className="fixed left-0 right-0 top-14 z-[60] border-b border-orbitus-border bg-orbitus-surface px-4 py-4 shadow-2xl md:hidden"
           >
             <nav className="flex flex-col gap-1" aria-label="Navegação principal">
+              <NavLink href="/hoje" active={pathname === '/hoje'} onClick={close}>
+                Hoje
+              </NavLink>
+              <NavLink href="/turmas" active={!!pathname?.startsWith('/turmas')} onClick={close}>
+                Turmas
+              </NavLink>
               <NavLink href="/roster" active={!!pathname?.startsWith('/roster')} onClick={close}>
                 Roster
               </NavLink>
@@ -134,9 +146,6 @@ export function AppHeader() {
               </NavLink>
               <NavLink href="/students/new" active={pathname === '/students/new'} onClick={close}>
                 + Cadastrar aluno
-              </NavLink>
-              <NavLink href="/" active={false} onClick={close}>
-                Início
               </NavLink>
             </nav>
             <div className="mt-3 border-t border-orbitus-border pt-3">

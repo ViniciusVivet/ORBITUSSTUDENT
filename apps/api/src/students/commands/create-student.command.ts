@@ -9,6 +9,9 @@ export class CreateStudentCommand {
       classGroupId?: string;
       avatarType: AvatarType;
       avatarValue: string;
+      weekDays?: number[];
+      courseStartAt?: string | null;
+      courseEndAt?: string | null;
     },
   ) {}
 }
