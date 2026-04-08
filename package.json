@@ -8,7 +8,8 @@
     "build": "pnpm -r run build",
     "db:generate": "pnpm --filter api run prisma:generate",
     "db:migrate": "pnpm --filter api run prisma:migrate",
-    "db:studio": "pnpm --filter api run prisma:studio"
+    "db:studio": "pnpm --filter api run prisma:studio",
+    "test": "pnpm --filter api run test && pnpm --filter web run test"
   },
   "devDependencies": {
     "typescript": "^5.3.3"
