@@ -1,4 +1,6 @@
-export const PLANET_COLORS: Record<string, { primary: string; glow: string; ring: string; bg: string }> = {
+export type PlanetColor = { primary: string; glow: string; ring: string; bg: string };
+
+export const PLANET_COLORS: Record<string, PlanetColor> = {
   excel:    { primary: '#f97316', glow: 'rgba(249,115,22,0.35)',  ring: '#f97316', bg: 'rgba(249,115,22,0.08)' },
   html:     { primary: '#38bdf8', glow: 'rgba(56,189,248,0.35)', ring: '#38bdf8', bg: 'rgba(56,189,248,0.08)' },
   hardware: { primary: '#4ade80', glow: 'rgba(74,222,128,0.35)', ring: '#4ade80', bg: 'rgba(74,222,128,0.08)' },
@@ -9,7 +11,7 @@ export const PLANET_COLORS: Record<string, { primary: string; glow: string; ring
 
 const PALETTE_ORDER = ['#38bdf8','#4ade80','#f97316','#c084fc','#f472b6','#fbbf24','#fb923c','#34d399'];
 
-export function getPlanetColors(groupName: string, groupIndex = 0): { primary: string; glow: string; ring: string; bg: string } {
+export function getPlanetColors(groupName: string, groupIndex = 0): PlanetColor {
   const lower = groupName.toLowerCase();
   if (lower.includes('excel') || lower.includes('bi') || lower.includes('planilha')) return PLANET_COLORS.excel;
   if (lower.includes('html') || lower.includes('css') || lower.includes('web')) return PLANET_COLORS.html;

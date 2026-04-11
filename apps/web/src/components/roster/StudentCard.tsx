@@ -6,6 +6,7 @@ import type { StudentListItem } from '@orbitus/shared';
 import { AttentionHintsBadges } from '@/components/AttentionHintsBadges';
 import { QuickLessonForm } from '@/components/roster/QuickLessonForm';
 import { getPlanetColors } from '@/lib/planetColors';
+import { AstronautAvatar } from '@/components/AstronautAvatar';
 
 interface Props {
   student: StudentListItem;
@@ -89,17 +90,15 @@ export function StudentCard({
         }}
       >
         {/* Astronaut avatar */}
-        <div
-          className="relative mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full text-3xl"
-          style={{
-            background: `radial-gradient(circle at 35% 30%, ${planetColor.primary}40, #141832 70%)`,
-            boxShadow: `0 0 0 2px ${planetColor.ring}50, 0 4px 16px rgba(0,0,0,0.4)`,
-          }}
-        >
-          {s.avatarType === 'emoji' ? s.avatarValue : '🧑‍🚀'}
+        <div className="relative mx-auto mb-3 flex h-16 w-16 items-center justify-center">
+          <AstronautAvatar
+            planetColor={planetColor}
+            avatarValue={s.avatarType === 'emoji' ? s.avatarValue : undefined}
+            size={64}
+          />
           {/* Level badge */}
           <div
-            className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold text-black ring-2 ring-[#141832]"
+            className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold text-black ring-2 ring-[#141832] z-10"
             style={{ background: planetColor.primary }}
           >
             {s.level ?? 1}
@@ -107,7 +106,7 @@ export function StudentCard({
           {/* Attention pulse dot */}
           {isInAttentionQueue && (
             <span
-              className="absolute -top-0.5 -left-0.5 h-3 w-3 rounded-full bg-amber-400 animate-pulse ring-2 ring-[#141832]"
+              className="absolute -top-0.5 -left-0.5 h-3 w-3 rounded-full bg-amber-400 animate-pulse ring-2 ring-[#141832] z-10"
               aria-label="Na fila de atenção"
             />
           )}

@@ -7,6 +7,7 @@ import type { StudentListItem, StudentSummary } from '@orbitus/shared';
 import { fetchStudentSummary } from '@/lib/api/students';
 import { QuickLessonForm } from '@/components/roster/QuickLessonForm';
 import { AnimatePresence } from 'framer-motion';
+import { AstronautAvatar } from '@/components/AstronautAvatar';
 
 interface Props {
   studentId: string;
@@ -78,17 +79,15 @@ export function DetailPanel({ studentId, studentPreview, planetColor, onClose }:
         >
           <div className="flex items-start gap-3">
             {/* Avatar */}
-            <div
-              className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-3xl"
-              style={{
-                background: `radial-gradient(circle at 35% 30%, ${planetColor.primary}40, #111527 70%)`,
-                boxShadow: `0 0 0 2px ${planetColor.ring}60, 0 4px 20px ${planetColor.glow}`,
-              }}
-            >
-              {s.avatarType === 'emoji' ? s.avatarValue : '🧑‍🚀'}
+            <div className="relative flex h-14 w-14 shrink-0 items-center justify-center">
+              <AstronautAvatar
+                planetColor={planetColor}
+                avatarValue={s.avatarType === 'emoji' ? s.avatarValue : undefined}
+                size={56}
+              />
               {/* Level */}
               <div
-                className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold text-black ring-2 ring-[#111527]"
+                className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold text-black ring-2 ring-[#111527] z-10"
                 style={{ background: planetColor.primary }}
               >
                 {s.level ?? 1}
