@@ -87,14 +87,14 @@ export class GetDashboardOverviewHandler implements IQueryHandler<GetDashboardOv
 
     let tempoMedio = '—';
     if (avgDurationByTopic.length > 0) {
-      const topicIds = avgDurationByTopic.map((g) => g.topicId);
+      const topicIds = avgDurationByTopic.map((g) => g.topicId).filter((id): id is string => id !== null);
       const topics = await this.prisma.topic.findMany({
         where: { id: { in: topicIds } },
         select: { id: true, name: true },
       });
       const byName = new Map(topics.map((t) => [t.id, t.name]));
       const avg = avgDurationByTopic[0];
-      const name = byName.get(avg.topicId) ?? 'Tema';
+      const name = (avg.topicId ? byName.get(avg.topicId) : undefined) ?? 'Tema';
       tempoMedio = `${Math.round(avg._avg.durationMinutes ?? 0)} min (${name})`;
     }
 

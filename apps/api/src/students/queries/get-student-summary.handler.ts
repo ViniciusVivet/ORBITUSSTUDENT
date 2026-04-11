@@ -50,7 +50,7 @@ export class GetStudentSummaryHandler implements IQueryHandler<GetStudentSummary
         id: l.id,
         heldAt: l.heldAt.toISOString(),
         durationMinutes: l.durationMinutes,
-        topicName: l.topic.name,
+        topicName: l.topic?.name ?? 'Aula Livre',
         rating: l.rating,
         xpEarned: l.xpEarned,
       })),
