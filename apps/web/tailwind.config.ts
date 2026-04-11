@@ -10,11 +10,11 @@ const config: Config = {
     extend: {
       colors: {
         orbitus: {
-          dark: '#0f0d1a',
-          surface: '#16132b',
-          card: '#1e1a30',
-          'card-hover': '#252040',
-          border: '#2a2545',
+          dark: '#0a0e1a',
+          surface: '#111527',
+          card: '#141832',
+          'card-hover': '#1a1f3a',
+          border: '#1a2040',
           accent: '#8b5cf6',
           'accent-bright': '#a78bfa',
           'accent-glow': '#7c3aed',
@@ -27,7 +27,7 @@ const config: Config = {
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-hero': 'radial-gradient(ellipse at 50% 0%, #2d1b6b 0%, #0f0d1a 60%)',
+        'gradient-hero': 'radial-gradient(ellipse at 50% 0%, #2d1b6b 0%, #0a0e1a 60%)',
         'gradient-card': 'linear-gradient(135deg, #1e1a30 0%, #1a1628 100%)',
         'gradient-accent': 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
       },

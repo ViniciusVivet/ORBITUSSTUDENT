@@ -10,53 +10,50 @@ interface Props {
 export function AttentionQueueBanner({ items }: Props) {
   if (items.length === 0) return null;
 
-  const displayed = items.slice(0, 6);
+  const displayed = items.slice(0, 4);
 
   return (
     <section
-      className="mb-6 card-base border-amber-500/25 bg-amber-500/5 p-4"
+      className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/5 px-3 py-2.5"
       aria-labelledby="attention-queue-heading"
     >
-      <div className="mb-3 flex items-center gap-2">
-        <span className="relative flex h-2.5 w-2.5" aria-hidden>
+      <div className="mb-2 flex items-center gap-2">
+        <span className="relative flex h-2 w-2 shrink-0" aria-hidden>
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
-          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-amber-500" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500" />
         </span>
-        <h2 id="attention-queue-heading" className="text-sm font-semibold text-amber-300">
+        <h2 id="attention-queue-heading" className="text-xs font-semibold text-amber-300">
           Fila de atenção
         </h2>
-        <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-xs font-semibold text-amber-400">
+        <span className="rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-amber-400">
           {items.length}
         </span>
       </div>
-      <ul className="space-y-1.5">
+
+      {/* Horizontal scroll of compact cards */}
+      <div className="flex gap-2 overflow-x-auto pb-1" role="list">
         {displayed.map((row) => (
-          <li
+          <Link
             key={row.studentId}
-            className="flex flex-col gap-2 rounded-lg border border-orbitus-border/60 bg-orbitus-dark/30 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+            href={`/students/${row.studentId}`}
+            role="listitem"
+            className="shrink-0 flex items-center gap-2 rounded-lg border border-amber-500/15 bg-[#141832] px-2.5 py-1.5 transition hover:border-amber-500/40 hover:bg-[#1a2040]"
           >
-            <Link
-              href={`/students/${row.studentId}`}
-              className="font-medium text-gray-200 hover:text-orbitus-accent-bright transition"
-            >
-              {row.displayName}
-              {row.classGroup?.name ? (
-                <span className="ml-2 text-xs font-normal text-gray-500">· {row.classGroup.name}</span>
-              ) : null}
-            </Link>
-            <div className="flex flex-wrap gap-1">
-              {row.reasons.map((r, i) => (
-                <span
-                  key={`${row.studentId}-${i}`}
-                  className="rounded-full bg-orbitus-border px-2.5 py-0.5 text-xs text-gray-300"
-                >
-                  {r}
-                </span>
-              ))}
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" aria-hidden />
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-gray-200 truncate max-w-[120px]">{row.displayName}</p>
+              {row.classGroup?.name && (
+                <p className="text-[10px] text-gray-600 truncate">{row.classGroup.name}</p>
+              )}
             </div>
-          </li>
+          </Link>
         ))}
-      </ul>
+        {items.length > 4 && (
+          <div className="shrink-0 flex items-center px-2 text-xs text-gray-600">
+            +{items.length - 4} mais
+          </div>
+        )}
+      </div>
     </section>
   );
 }

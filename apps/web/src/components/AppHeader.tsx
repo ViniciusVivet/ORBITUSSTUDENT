@@ -50,7 +50,7 @@ export function AppHeader() {
     };
   }, [mobileOpen]);
 
-  if (pathname === '/' || pathname === '/login') return null;
+  if (pathname === '/' || pathname === '/login' || pathname?.startsWith('/roster')) return null;
   if (!token) return null;
 
   const close = () => setMobileOpen(false);
