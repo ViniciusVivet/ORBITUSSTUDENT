@@ -16,21 +16,25 @@ interface Props {
   classGroups: { id: string; name: string }[];
   onChange: (filters: Partial<RosterFiltersState>) => void;
   onClear: () => void;
+  /** Quando true, omite o input de busca (o pai renderiza o proprio com ref) */
+  hideSearch?: boolean;
 }
 
-export function RosterFilters({ filters, classGroups, onChange, onClear }: Props) {
+export function RosterFilters({ filters, classGroups, onChange, onClear, hideSearch = false }: Props) {
   const { search, filterTurma, filterStatus, filterNoLessonDays, sortBy, rosterView } = filters;
   const hasActiveFilters = !!(search.trim() || filterTurma || filterStatus || filterNoLessonDays !== '');
 
   return (
-    <div className="mb-6 flex flex-col gap-2.5 touch-manipulation sm:flex-row sm:flex-wrap sm:items-center">
-      <input
-        type="search"
-        placeholder="Buscar por nome..."
-        value={search}
-        onChange={(e) => onChange({ search: e.target.value })}
-        className="input-field min-h-11 w-full min-w-0 sm:min-h-0 sm:min-w-[180px] sm:w-auto"
-      />
+    <>
+      {!hideSearch && (
+        <input
+          type="search"
+          placeholder="Buscar por nome..."
+          value={search}
+          onChange={(e) => onChange({ search: e.target.value })}
+          className="input-field min-h-11 w-full min-w-0 sm:min-h-0 sm:min-w-[180px] sm:w-auto"
+        />
+      )}
       <select
         value={filterTurma}
         onChange={(e) => onChange({ filterTurma: e.target.value })}
@@ -107,6 +111,6 @@ export function RosterFilters({ filters, classGroups, onChange, onClear }: Props
           ✕ Limpar
         </button>
       )}
-    </div>
+    </>
   );
 }

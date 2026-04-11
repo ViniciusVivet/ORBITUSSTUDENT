@@ -14,7 +14,10 @@ export async function registerLesson(
   data: RegisterLessonData,
 ): Promise<{ xpEarned: number }> {
   if (isDemoMode()) {
-    throw new Error('Conecte a API para registrar aulas.');
+    // Simula registro em modo demo: XP baseado na duracao e rating
+    await new Promise((r) => setTimeout(r, 400));
+    const xpEarned = Math.round((data.durationMinutes / 45) * data.rating * 10);
+    return { xpEarned };
   }
   return apiFetch<{ xpEarned: number }>(`/students/${studentId}/lessons`, {
     method: 'POST',

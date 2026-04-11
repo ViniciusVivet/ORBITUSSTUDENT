@@ -10,13 +10,18 @@ interface Props {
 export function AttentionQueueBanner({ items }: Props) {
   if (items.length === 0) return null;
 
+  const displayed = items.slice(0, 6);
+
   return (
     <section
       className="mb-6 card-base border-amber-500/25 bg-amber-500/5 p-4"
       aria-labelledby="attention-queue-heading"
     >
       <div className="mb-3 flex items-center gap-2">
-        <span className="text-base" aria-hidden>⚠️</span>
+        <span className="relative flex h-2.5 w-2.5" aria-hidden>
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
+          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-amber-500" />
+        </span>
         <h2 id="attention-queue-heading" className="text-sm font-semibold text-amber-300">
           Fila de atenção
         </h2>
@@ -25,7 +30,7 @@ export function AttentionQueueBanner({ items }: Props) {
         </span>
       </div>
       <ul className="space-y-1.5">
-        {items.map((row) => (
+        {displayed.map((row) => (
           <li
             key={row.studentId}
             className="flex flex-col gap-2 rounded-lg border border-orbitus-border/60 bg-orbitus-dark/30 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
