@@ -57,7 +57,7 @@ export function DetailPanel({ studentId, studentPreview, planetColor, onClose }:
     <>
       {/* Backdrop on mobile */}
       <div
-        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm sm:hidden"
+        className="fixed inset-0 z-40 bg-black/70 sm:hidden"
         onClick={onClose}
         aria-hidden
       />
@@ -67,7 +67,7 @@ export function DetailPanel({ studentId, studentPreview, planetColor, onClose }:
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
         transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-        className="fixed right-0 top-0 z-50 h-full w-full sm:w-[320px] md:w-[360px] flex flex-col bg-[#111527]/98 backdrop-blur-xl border-l border-[#1a2040] shadow-2xl overflow-hidden"
+        className="fixed right-0 top-0 z-50 h-full w-full sm:w-[320px] md:w-[360px] flex flex-col bg-[#111527] border-l border-[#1a2040] shadow-2xl overflow-hidden"
         role="dialog"
         aria-modal="true"
         aria-label={`Painel de ${s.displayName}`}
