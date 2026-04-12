@@ -6,6 +6,7 @@ import Link from 'next/link';
 import type { StudentListItem, StudentSummary } from '@orbitus/shared';
 import { fetchStudentSummary } from '@/lib/api/students';
 import { updateLesson } from '@/lib/api/lessons';
+import { sendAiChat } from '@/lib/api/dashboard';
 import { QuickLessonForm } from '@/components/roster/QuickLessonForm';
 import { AstronautAvatar } from '@/components/AstronautAvatar';
 
@@ -17,6 +18,7 @@ interface Props {
 }
 
 type Lesson = StudentSummary['lastLessons'][number];
+type AiAction = 'summary' | 'nextLesson';
 
 function SkeletonLine({ w }: { w: string }) {
   return <div className={`h-3 animate-pulse rounded bg-[#1a2040] ${w}`} />;
@@ -32,6 +34,35 @@ function mediaLabel(url: string): string {
   return 'Abrir material';
 }
 
+function buildAiPrompt(summary: StudentSummary, action: AiAction): string {
+  const lessons = summary.lastLessons
+    .map((lesson) => `- ${lesson.topicName}, ${lesson.durationMinutes}min, nota ${lesson.rating}, ${lesson.xpEarned} XP${lesson.notes ? `, nota: ${lesson.notes}` : ''}`)
+    .join('\n') || '- Nenhuma aula registrada';
+  const skills = summary.skillBars
+    .map((skill) => `- ${skill.skillName}: nivel ${skill.level}, ${skill.currentXp} XP`)
+    .join('\n') || '- Sem habilidades registradas';
+  const context = [
+    `Aluno: ${summary.student.displayName}`,
+    `Turma: ${summary.student.classGroup?.name ?? 'Sem turma'}`,
+    `Nivel: ${summary.student.level}`,
+    `XP: ${summary.student.xp}`,
+    `Bloqueios ativos: ${summary.activeBlockersCount}`,
+    `Metas ativas: ${summary.activeGoalsCount}`,
+    '',
+    'Ultimas aulas:',
+    lessons,
+    '',
+    'Habilidades:',
+    skills,
+  ].join('\n');
+
+  if (action === 'summary') {
+    return `${context}\n\nEscreva um resumo pedagogico curto, direto e util para um professor de programacao/informatica.`;
+  }
+
+  return `${context}\n\nSugira a proxima aula em formato objetivo: objetivo, atividade pratica e criterio de sucesso.`;
+}
+
 export function DetailPanel({ studentId, studentPreview, planetColor, onClose }: Props) {
   const [summary, setSummary] = useState<StudentSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,6 +72,9 @@ export function DetailPanel({ studentId, studentPreview, planetColor, onClose }:
   const [lessonMediaUrl, setLessonMediaUrl] = useState('');
   const [lessonSaving, setLessonSaving] = useState(false);
   const [lessonError, setLessonError] = useState('');
+  const [aiReply, setAiReply] = useState('');
+  const [aiLoading, setAiLoading] = useState<AiAction | null>(null);
+  const [aiError, setAiError] = useState('');
 
   const s = summary?.student ?? studentPreview;
 
@@ -92,6 +126,20 @@ export function DetailPanel({ studentId, studentPreview, planetColor, onClose }:
       setLessonError(err instanceof Error ? err.message : 'Falha ao salvar aula.');
     } finally {
       setLessonSaving(false);
+    }
+  }
+
+  async function runAiAction(action: AiAction) {
+    if (!summary) return;
+    setAiLoading(action);
+    setAiError('');
+    try {
+      const data = await sendAiChat(buildAiPrompt(summary, action));
+      setAiReply(data.reply);
+    } catch (err) {
+      setAiError(err instanceof Error ? err.message : 'Falha ao consultar assistente.');
+    } finally {
+      setAiLoading(null);
     }
   }
 
@@ -217,6 +265,32 @@ export function DetailPanel({ studentId, studentPreview, planetColor, onClose }:
                 ) : (
                   <p className="text-xs italic text-gray-600">Nenhuma aula registrada</p>
                 )}
+              </section>
+
+              <section>
+                <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-600">Assistente IA</p>
+                <div className="space-y-2 rounded-lg border border-[#1a2040] bg-[#141832] p-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void runAiAction('summary')}
+                      disabled={aiLoading !== null}
+                      className="rounded-lg border border-orbitus-accent/30 px-2 py-2 text-xs font-medium text-orbitus-accent-bright transition hover:bg-orbitus-accent/10 disabled:opacity-50"
+                    >
+                      {aiLoading === 'summary' ? 'Gerando...' : 'Resumo'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void runAiAction('nextLesson')}
+                      disabled={aiLoading !== null}
+                      className="rounded-lg border border-orbitus-accent/30 px-2 py-2 text-xs font-medium text-orbitus-accent-bright transition hover:bg-orbitus-accent/10 disabled:opacity-50"
+                    >
+                      {aiLoading === 'nextLesson' ? 'Gerando...' : 'Proxima aula'}
+                    </button>
+                  </div>
+                  {aiError && <p className="text-xs text-red-400" role="alert">{aiError}</p>}
+                  {aiReply && <p className="max-h-40 overflow-y-auto whitespace-pre-wrap text-xs leading-relaxed text-gray-300">{aiReply}</p>}
+                </div>
               </section>
 
               <AnimatePresence>
