@@ -86,7 +86,7 @@ model Student {
   level         Int           @default(1)
   xp            Int           @default(0)
   status        StudentStatus @default(active)
-  weekDays      Int[]     @default([])
+  weekDays      Int[]     @default([]) @map("week_days")
   courseStartAt DateTime? @map("course_start_at")
   courseEndAt   DateTime? @map("course_end_at")
   createdAt     DateTime      @default(now()) @map("created_at")
