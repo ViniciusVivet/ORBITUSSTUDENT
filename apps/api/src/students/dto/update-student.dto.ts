@@ -1,5 +1,4 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-
 import { IsString, IsOptional, IsEnum, IsArray, IsInt, Min, Max, IsDateString, IsUrl } from 'class-validator';
 import { StudentStatus } from '@prisma/client';
 

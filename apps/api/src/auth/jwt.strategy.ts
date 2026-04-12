@@ -7,7 +7,7 @@ import { AuthService } from './auth.service';
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private readonly authService: AuthService) {
     if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
-      throw new Error('JWT_SECRET deve ser definido em producao.');
+      throw new Error('JWT_SECRET deve ser definido em produção.');
     }
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),

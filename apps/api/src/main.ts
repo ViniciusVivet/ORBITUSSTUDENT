@@ -8,11 +8,11 @@ const logger = new Logger('Bootstrap');
 
 async function bootstrap() {
   if (!process.env.DATABASE_URL) {
-    logger.error('DATABASE_URL nao configurado — API nao conectara ao banco.');
+    logger.error('DATABASE_URL não configurado — API não conectará ao banco.');
     process.exit(1);
   }
   if (!process.env.JWT_SECRET) {
-    logger.warn('JWT_SECRET nao configurado — usando fallback inseguro. Defina JWT_SECRET em producao!');
+    logger.warn('JWT_SECRET não configurado — usando fallback inseguro. Defina JWT_SECRET em produção!');
   }
 
   const app = await NestFactory.create(AppModule);
