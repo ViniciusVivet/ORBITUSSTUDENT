@@ -14,7 +14,18 @@ async function bootstrap() {
     }),
   );
   app.useGlobalFilters(new HttpExceptionFilter());
-  app.enableCors({ origin: process.env.CORS_ORIGIN ?? 'http://localhost:3000' });
+  const rawOrigins = (process.env.CORS_ORIGIN ?? 'http://localhost:3000').split(',').map((o) => o.trim()).filter(Boolean);
+  app.enableCors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (curl, mobile, server-to-server)
+      if (!origin) return callback(null, true);
+      if (rawOrigins.includes(origin)) return callback(null, true);
+      // Allow any *.vercel.app preview URL
+      if (origin.endsWith('.vercel.app')) return callback(null, true);
+      callback(new Error(`CORS blocked: ${origin}`), false);
+    },
+    credentials: true,
+  });
 
   const config = new DocumentBuilder()
     .setTitle('Orbitus Classroom RPG API')
