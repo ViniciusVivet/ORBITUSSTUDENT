@@ -16,6 +16,7 @@ import { GoalsList } from '@/components/student/GoalsList';
 import { StudentEditForm } from '@/components/student/StudentEditForm';
 import { LessonTimeline } from '@/components/student/LessonTimeline';
 import { AttendanceHistory } from '@/components/student/AttendanceHistory';
+import { StudentReportCard } from '@/components/student/StudentReportCard';
 
 export default function StudentPage() {
   const params = useParams();
@@ -272,6 +273,13 @@ export default function StudentPage() {
             onClose={() => setShowEditForm(false)}
           />
         )}
+
+        <StudentReportCard
+          summary={summary}
+          blockers={blockers}
+          goals={goals}
+          generatedAtLabel={generatedAtLabel}
+        />
 
         <RegisterLessonForm
           studentId={id}
