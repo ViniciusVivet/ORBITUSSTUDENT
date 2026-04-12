@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { registerLesson } from '@/lib/api/lessons';
 import { fetchTopics } from '@/lib/api/students';
 import type { TopicOption } from '@/lib/api/students';
@@ -12,6 +12,17 @@ interface Props {
 }
 
 type FormStatus = 'idle' | 'saving' | 'success' | 'error';
+
+function hoursFromMinutes(minutes: number): string {
+  const hours = minutes / 60;
+  return Number.isInteger(hours) ? String(hours) : String(Number(hours.toFixed(2)));
+}
+
+function minutesFromHours(value: string): number {
+  const parsed = Number(value.replace(',', '.'));
+  if (!Number.isFinite(parsed) || parsed <= 0) return 1;
+  return Math.max(1, Math.min(480, Math.round(parsed * 60)));
+}
 
 function StarRating({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const [hovered, setHovered] = useState(0);
@@ -29,7 +40,7 @@ function StarRating({ value, onChange }: { value: number; onChange: (v: number) 
             n <= (hovered || value) ? 'text-amber-400' : 'text-gray-600'
           }`}
         >
-          ★
+          *
         </button>
       ))}
     </div>
@@ -40,7 +51,7 @@ export function QuickLessonForm({ studentId, onClose }: Props) {
   const [topics, setTopics] = useState<TopicOption[]>([]);
   const [topicId, setTopicId] = useState('');
   const [rating, setRating] = useState(4);
-  const [duration, setDuration] = useState(45);
+  const [duration, setDuration] = useState(60);
   const [heldAt, setHeldAt] = useState(() => {
     const now = new Date();
     now.setSeconds(0, 0);
@@ -91,24 +102,23 @@ export function QuickLessonForm({ studentId, onClose }: Props) {
       <div className="mt-3 rounded-xl border border-orbitus-accent/30 bg-orbitus-dark/60 p-4">
         {status === 'success' ? (
           <div className="flex items-center justify-center gap-2 py-2 text-sm font-semibold text-green-400">
-            <span>✓</span>
+            <span>OK</span>
             <span>+{xpEarned} XP registrado!</span>
           </div>
         ) : (
           <form ref={formRef} onSubmit={handleSubmit} onClick={(e) => e.stopPropagation()}>
             <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-orbitus-accent-bright">
-              ⚡ Registrar aula
+              Registrar aula
             </p>
             <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {/* Topico */}
               <div className="sm:col-span-2">
-                <label className="mb-1 block text-xs text-gray-500">Tópico (opcional)</label>
+                <label className="mb-1 block text-xs text-gray-500">Topico (opcional)</label>
                 <select
                   value={topicId}
                   onChange={(e) => setTopicId(e.target.value)}
                   className="input-field w-full text-sm"
                 >
-                  <option value="">Sem tópico</option>
+                  <option value="">Sem topico</option>
                   {topics.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.name}
@@ -117,26 +127,25 @@ export function QuickLessonForm({ studentId, onClose }: Props) {
                 </select>
               </div>
 
-              {/* Rating */}
               <div>
-                <label className="mb-1 block text-xs text-gray-500">Avaliação</label>
+                <label className="mb-1 block text-xs text-gray-500">Avaliacao</label>
                 <StarRating value={rating} onChange={setRating} />
               </div>
 
-              {/* Duracao */}
               <div>
-                <label className="mb-1 block text-xs text-gray-500">Duração (min)</label>
+                <label className="mb-1 block text-xs text-gray-500">Duracao (horas)</label>
                 <input
                   type="number"
-                  min={1}
-                  max={480}
-                  value={duration}
-                  onChange={(e) => setDuration(Number(e.target.value))}
+                  min={0.25}
+                  max={8}
+                  step={0.25}
+                  value={hoursFromMinutes(duration)}
+                  onChange={(e) => setDuration(minutesFromHours(e.target.value))}
                   className="input-field w-full text-sm"
                 />
+                <p className="mt-1 text-[10px] text-gray-600">{duration} min</p>
               </div>
 
-              {/* Data/hora */}
               <div className="sm:col-span-2">
                 <label className="mb-1 block text-xs text-gray-500">Data e hora</label>
                 <input
@@ -160,14 +169,14 @@ export function QuickLessonForm({ studentId, onClose }: Props) {
                 disabled={status === 'saving'}
                 className="btn-primary flex-1 py-2 text-sm disabled:opacity-60"
               >
-                {status === 'saving' ? 'Salvando…' : 'Registrar'}
+                {status === 'saving' ? 'Salvando...' : 'Registrar'}
               </button>
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onClose(); }}
                 className="rounded-lg border border-orbitus-border px-3 py-2 text-sm text-gray-400 transition hover:text-white"
               >
-                ×
+                x
               </button>
             </div>
           </form>
