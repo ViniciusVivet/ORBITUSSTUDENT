@@ -8,6 +8,7 @@ export class ListClassGroupsHandler implements IQueryHandler<ListClassGroupsQuer
 
   async execute(query: ListClassGroupsQuery) {
     const groups = await this.prisma.classGroup.findMany({
+      where: { teacherUserId: query.teacherUserId },
       orderBy: { name: 'asc' },
       select: { id: true, name: true, course: true },
     });

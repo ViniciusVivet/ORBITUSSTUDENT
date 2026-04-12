@@ -9,6 +9,7 @@ export class CreateClassGroupHandler implements ICommandHandler<CreateClassGroup
   async execute(command: CreateClassGroupCommand) {
     return this.prisma.classGroup.create({
       data: {
+        teacherUserId: command.teacherUserId,
         name: command.data.name,
         course: command.data.course ?? null,
         academicPeriod: command.data.academicPeriod ?? null,

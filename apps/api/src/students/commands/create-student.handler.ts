@@ -1,4 +1,5 @@
 import { ICommandHandler, CommandHandler } from '@nestjs/cqrs';
+import { NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateStudentCommand } from './create-student.command';
 
@@ -8,6 +9,13 @@ export class CreateStudentHandler implements ICommandHandler<CreateStudentComman
 
   async execute(command: CreateStudentCommand) {
     const { teacherUserId, data } = command;
+    if (data.classGroupId) {
+      const group = await this.prisma.classGroup.findFirst({
+        where: { id: data.classGroupId, teacherUserId },
+        select: { id: true },
+      });
+      if (!group) throw new NotFoundException('Turma nao encontrada');
+    }
     const student = await this.prisma.student.create({
       data: {
         teacherUserId,

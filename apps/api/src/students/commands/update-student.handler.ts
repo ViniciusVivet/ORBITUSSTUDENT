@@ -16,7 +16,16 @@ export class UpdateStudentHandler implements ICommandHandler<UpdateStudentComman
     const data: Record<string, unknown> = {};
     if (command.data.displayName !== undefined) data.displayName = command.data.displayName.trim();
     if (command.data.fullName !== undefined) data.fullName = command.data.fullName?.trim() ?? null;
-    if (command.data.classGroupId !== undefined) data.classGroupId = command.data.classGroupId ?? null;
+    if (command.data.classGroupId !== undefined) {
+      if (command.data.classGroupId) {
+        const group = await this.prisma.classGroup.findFirst({
+          where: { id: command.data.classGroupId, teacherUserId: command.teacherUserId },
+          select: { id: true },
+        });
+        if (!group) throw new NotFoundException('Turma nao encontrada');
+      }
+      data.classGroupId = command.data.classGroupId ?? null;
+    }
     if (command.data.status !== undefined) data.status = command.data.status;
     if (command.data.weekDays !== undefined) data.weekDays = command.data.weekDays;
     if (command.data.courseStartAt !== undefined) data.courseStartAt = command.data.courseStartAt ? new Date(command.data.courseStartAt) : null;

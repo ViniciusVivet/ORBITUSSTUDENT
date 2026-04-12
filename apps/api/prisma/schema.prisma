@@ -56,21 +56,25 @@ model TeacherUser {
   blockers        Blocker[]
   goals           Goal[]
   classSessions   ClassSession[]
+  classGroups     ClassGroup[]
 
   @@map("teacher_users")
 }
 
 model ClassGroup {
   id             String   @id @default(cuid())
+  teacherUserId  String   @map("teacher_user_id")
   name           String
   course         String?
   academicPeriod String?  @map("academic_period")
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
+  teacherUser TeacherUser @relation(fields: [teacherUserId], references: [id], onDelete: Restrict)
   students Student[]
   sessions ClassSession[]
 
+  @@index([teacherUserId])
   @@map("class_groups")
 }
 

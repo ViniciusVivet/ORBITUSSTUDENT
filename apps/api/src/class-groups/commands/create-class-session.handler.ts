@@ -8,10 +8,26 @@ export class CreateClassSessionHandler implements ICommandHandler<CreateClassSes
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(command: CreateClassSessionCommand) {
-    const group = await this.prisma.classGroup.findUnique({
-      where: { id: command.classGroupId },
+    const group = await this.prisma.classGroup.findFirst({
+      where: { id: command.classGroupId, teacherUserId: command.teacherUserId },
     });
-    if (!group) throw new NotFoundException('Turma não encontrada');
+    if (!group) throw new NotFoundException('Turma nao encontrada');
+
+    const attendanceStudentIds = command.data.attendances.map((attendance) => attendance.studentId);
+    if (attendanceStudentIds.length > 0) {
+      const validStudents = await this.prisma.student.findMany({
+        where: {
+          id: { in: attendanceStudentIds },
+          teacherUserId: command.teacherUserId,
+          classGroupId: command.classGroupId,
+        },
+        select: { id: true },
+      });
+      const validIds = new Set(validStudents.map((student) => student.id));
+      if (attendanceStudentIds.some((studentId) => !validIds.has(studentId))) {
+        throw new NotFoundException('Aluno da chamada nao pertence a esta turma');
+      }
+    }
 
     const session = await this.prisma.classSession.create({
       data: {
@@ -26,12 +42,12 @@ export class CreateClassSessionHandler implements ICommandHandler<CreateClassSes
 
     if (command.data.attendances.length > 0) {
       await this.prisma.sessionAttendance.createMany({
-        data: command.data.attendances.map((a) => ({
+        data: command.data.attendances.map((attendance) => ({
           sessionId: session.id,
-          studentId: a.studentId,
-          status: a.status,
-          note: a.note ?? null,
-          grade: a.grade ?? null,
+          studentId: attendance.studentId,
+          status: attendance.status,
+          note: attendance.note ?? null,
+          grade: attendance.grade ?? null,
         })),
       });
     }

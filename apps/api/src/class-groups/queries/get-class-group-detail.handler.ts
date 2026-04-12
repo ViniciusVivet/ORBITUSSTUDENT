@@ -8,11 +8,11 @@ export class GetClassGroupDetailHandler implements IQueryHandler<GetClassGroupDe
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(query: GetClassGroupDetailQuery) {
-    const group = await this.prisma.classGroup.findUnique({
-      where: { id: query.classGroupId },
+    const group = await this.prisma.classGroup.findFirst({
+      where: { id: query.classGroupId, teacherUserId: query.teacherUserId },
       include: {
         students: {
-          where: { status: 'active' },
+          where: { status: 'active', teacherUserId: query.teacherUserId },
           orderBy: { displayName: 'asc' },
           select: {
             id: true,

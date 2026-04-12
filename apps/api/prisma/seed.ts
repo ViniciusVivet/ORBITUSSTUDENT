@@ -18,23 +18,23 @@ async function main() {
 
   const skills = [
     { name: 'HTML', slug: 'html', color: '#e34c26', sortOrder: 1 },
-    { name: 'Lógica', slug: 'logica', color: '#6c5ce7', sortOrder: 2 },
+    { name: 'Logica', slug: 'logica', color: '#6c5ce7', sortOrder: 2 },
     { name: 'Excel', slug: 'excel', color: '#00a651', sortOrder: 3 },
-    { name: 'Robótica', slug: 'robotica', color: '#0984e3', sortOrder: 4 },
+    { name: 'Robotica', slug: 'robotica', color: '#0984e3', sortOrder: 4 },
   ];
-  for (const s of skills) {
+  for (const skill of skills) {
     await prisma.skill.upsert({
-      where: { slug: s.slug },
+      where: { slug: skill.slug },
       update: {},
-      create: s,
+      create: skill,
     });
   }
   console.log('Skills criadas:', skills.length);
 
   const topics = [
-    { name: 'Introdução ao HTML', slug: 'intro-html', xpWeight: 1 },
-    { name: 'Lógica de programação', slug: 'logica-prog', xpWeight: 1.2 },
-    { name: 'Planilhas básicas', slug: 'excel-basico', xpWeight: 1 },
+    { name: 'Introducao ao HTML', slug: 'intro-html', xpWeight: 1 },
+    { name: 'Logica de programacao', slug: 'logica-prog', xpWeight: 1.2 },
+    { name: 'Planilhas basicas', slug: 'excel-basico', xpWeight: 1 },
   ];
   const skillIds = await prisma.skill.findMany({ select: { id: true, slug: true } });
   const topicSkillMap: Record<string, string[]> = {
@@ -42,15 +42,15 @@ async function main() {
     'logica-prog': ['logica'],
     'excel-basico': ['excel'],
   };
-  for (const t of topics) {
+  for (const topicData of topics) {
     const topic = await prisma.topic.upsert({
-      where: { slug: t.slug },
+      where: { slug: topicData.slug },
       update: {},
-      create: { name: t.name, slug: t.slug, xpWeight: t.xpWeight },
+      create: { name: topicData.name, slug: topicData.slug, xpWeight: topicData.xpWeight },
     });
-    const skillSlugs = topicSkillMap[t.slug] ?? [];
+    const skillSlugs = topicSkillMap[topicData.slug] ?? [];
     for (const slug of skillSlugs) {
-      const skill = skillIds.find((s) => s.slug === slug);
+      const skill = skillIds.find((item) => item.slug === slug);
       if (skill) {
         await prisma.topicSkill.upsert({
           where: { topicId_skillId: { topicId: topic.id, skillId: skill.id } },
@@ -62,10 +62,12 @@ async function main() {
   }
   console.log('Topics criados:', topics.length);
 
-  let group = await prisma.classGroup.findFirst({ where: { name: 'Turma A' } });
+  let group = await prisma.classGroup.findFirst({
+    where: { name: 'Turma A', teacherUserId: teacher.id },
+  });
   if (!group) {
     group = await prisma.classGroup.create({
-      data: { name: 'Turma A', course: 'Programação' },
+      data: { teacherUserId: teacher.id, name: 'Turma A', course: 'Programacao' },
     });
   }
   console.log('Turma:', group.name);
@@ -73,8 +75,8 @@ async function main() {
 
 main()
   .then(() => prisma.$disconnect())
-  .catch((e) => {
-    console.error(e);
+  .catch((error) => {
+    console.error(error);
     prisma.$disconnect();
     process.exit(1);
   });
