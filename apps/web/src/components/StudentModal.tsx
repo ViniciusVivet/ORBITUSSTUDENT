@@ -154,6 +154,7 @@ export function StudentModal({ studentId, studentPreview, onClose }: Props) {
                     studentId={studentId}
                     onNavigateToLesson={() => setActiveTab('lesson')}
                     onClose={onClose}
+                    onLessonUpdate={() => void reload()}
                   />
                 )}
                 {activeTab === 'lesson' && (
