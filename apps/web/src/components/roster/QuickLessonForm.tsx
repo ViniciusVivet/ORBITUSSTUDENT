@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { registerLesson } from '@/lib/api/lessons';
-import { fetchTopics } from '@/lib/api/students';
+import { createTopic, fetchTopics } from '@/lib/api/students';
 import type { TopicOption } from '@/lib/api/students';
 
 interface Props {
@@ -12,6 +12,13 @@ interface Props {
 }
 
 type FormStatus = 'idle' | 'saving' | 'success' | 'error';
+const DURATION_PRESETS = [
+  { label: '30m', minutes: 30 },
+  { label: '45m', minutes: 45 },
+  { label: '1h', minutes: 60 },
+  { label: '1h30', minutes: 90 },
+  { label: '2h', minutes: 120 },
+];
 
 function hoursFromMinutes(minutes: number): string {
   const hours = minutes / 60;
@@ -52,6 +59,11 @@ export function QuickLessonForm({ studentId, onClose }: Props) {
   const [topicId, setTopicId] = useState('');
   const [rating, setRating] = useState(4);
   const [duration, setDuration] = useState(60);
+  const [notes, setNotes] = useState('');
+  const [mediaUrl, setMediaUrl] = useState('');
+  const [showNewTopic, setShowNewTopic] = useState(false);
+  const [newTopicName, setNewTopicName] = useState('');
+  const [creatingTopic, setCreatingTopic] = useState(false);
   const [heldAt, setHeldAt] = useState(() => {
     const now = new Date();
     now.setSeconds(0, 0);
@@ -66,6 +78,25 @@ export function QuickLessonForm({ studentId, onClose }: Props) {
     fetchTopics().then(setTopics).catch(() => setTopics([]));
   }, []);
 
+  async function handleCreateTopic() {
+    const name = newTopicName.trim();
+    if (!name || creatingTopic) return;
+    setCreatingTopic(true);
+    setErrorMsg('');
+    try {
+      const topic = await createTopic(name);
+      setTopics((prev) => [...prev, topic]);
+      setTopicId(topic.id);
+      setNewTopicName('');
+      setShowNewTopic(false);
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : 'Erro ao criar categoria.');
+      setStatus('error');
+    } finally {
+      setCreatingTopic(false);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     e.stopPropagation();
@@ -78,6 +109,8 @@ export function QuickLessonForm({ studentId, onClose }: Props) {
         heldAt: new Date(heldAt).toISOString(),
         durationMinutes: duration,
         rating,
+        notes: notes.trim() || undefined,
+        mediaUrl: mediaUrl.trim() || undefined,
       });
       setXpEarned(result.xpEarned);
       setStatus('success');
@@ -112,19 +145,54 @@ export function QuickLessonForm({ studentId, onClose }: Props) {
             </p>
             <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
               <div className="sm:col-span-2">
-                <label className="mb-1 block text-xs text-gray-500">Topico (opcional)</label>
-                <select
-                  value={topicId}
-                  onChange={(e) => setTopicId(e.target.value)}
-                  className="input-field w-full text-sm"
-                >
-                  <option value="">Sem topico</option>
-                  {topics.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="mb-1 flex items-center justify-between gap-3">
+                  <label className="text-xs text-gray-500">Topico (opcional)</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowNewTopic((v) => !v)}
+                    className="text-[10px] font-semibold text-orbitus-accent-bright hover:underline"
+                  >
+                    {showNewTopic ? 'Cancelar' : '+ Nova categoria'}
+                  </button>
+                </div>
+                {showNewTopic ? (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newTopicName}
+                      onChange={(e) => setNewTopicName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          void handleCreateTopic();
+                        }
+                      }}
+                      placeholder="Nome da categoria"
+                      className="input-field min-w-0 flex-1 text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => void handleCreateTopic()}
+                      disabled={creatingTopic || !newTopicName.trim()}
+                      className="rounded-lg bg-orbitus-accent px-3 py-2 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                    >
+                      {creatingTopic ? '...' : 'Criar'}
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    value={topicId}
+                    onChange={(e) => setTopicId(e.target.value)}
+                    className="input-field w-full text-sm"
+                  >
+                    <option value="">Sem topico</option>
+                    {topics.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div>
@@ -147,11 +215,52 @@ export function QuickLessonForm({ studentId, onClose }: Props) {
               </div>
 
               <div className="sm:col-span-2">
+                <div className="grid grid-cols-5 gap-1">
+                  {DURATION_PRESETS.map((preset) => (
+                    <button
+                      key={preset.minutes}
+                      type="button"
+                      onClick={() => setDuration(preset.minutes)}
+                      className={`rounded-lg border px-2 py-1 text-[10px] font-semibold transition ${
+                        duration === preset.minutes
+                          ? 'border-orbitus-accent bg-orbitus-accent/20 text-orbitus-accent-bright'
+                          : 'border-orbitus-border text-gray-500 hover:text-gray-300'
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="sm:col-span-2">
                 <label className="mb-1 block text-xs text-gray-500">Data e hora</label>
                 <input
                   type="datetime-local"
                   value={heldAt}
                   onChange={(e) => setHeldAt(e.target.value)}
+                  className="input-field w-full text-sm"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-xs text-gray-500">Observacao (opcional)</label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={2}
+                  placeholder="Resumo rapido da aula..."
+                  className="input-field w-full resize-none text-sm"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-xs text-gray-500">Material (opcional)</label>
+                <input
+                  type="url"
+                  value={mediaUrl}
+                  onChange={(e) => setMediaUrl(e.target.value)}
+                  placeholder="Link de PDF, foto, video ou Drive"
                   className="input-field w-full text-sm"
                 />
               </div>

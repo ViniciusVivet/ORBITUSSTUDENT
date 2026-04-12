@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsInt, Min, Max, IsOptional, IsDateString } from 'class-validator';
+import { IsString, IsInt, Min, Max, IsOptional, IsDateString, IsUrl, MaxLength } from 'class-validator';
 
 export class RegisterLessonDto {
   @ApiPropertyOptional({ description: 'ID do tópico da aula (opcional)' })
@@ -26,5 +26,11 @@ export class RegisterLessonDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  @MaxLength(2000)
   notes?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUrl()
+  mediaUrl?: string;
 }

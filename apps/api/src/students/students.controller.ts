@@ -162,6 +162,7 @@ export class StudentsController {
         durationMinutes: dto.durationMinutes,
         rating: dto.rating,
         notes: dto.notes,
+        mediaUrl: dto.mediaUrl,
       }),
     );
   }

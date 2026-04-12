@@ -8,6 +8,7 @@ export class RegisterLessonCommand {
       durationMinutes: number;
       rating: number;
       notes?: string;
+      mediaUrl?: string;
     },
   ) {}
 }

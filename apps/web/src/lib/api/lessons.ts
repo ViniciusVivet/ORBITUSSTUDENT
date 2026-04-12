@@ -12,6 +12,7 @@ export interface RegisterLessonData {
   durationMinutes: number;
   rating: number;
   notes?: string;
+  mediaUrl?: string;
 }
 
 export async function registerLesson(

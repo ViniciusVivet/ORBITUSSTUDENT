@@ -49,6 +49,7 @@ export class RegisterLessonHandler implements ICommandHandler<RegisterLessonComm
           topicId: topic.id,
           rating: data.rating,
           notes: data.notes ?? null,
+          mediaUrl: data.mediaUrl ?? null,
           xpEarned,
         },
         include: { topic: { select: { name: true } } },
