@@ -66,7 +66,7 @@ export function DetailPanel({ studentId, studentPreview, planetColor, onClose }:
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  const lastLesson = summary?.lastLessons?.[0];
+  const recentLessons = summary?.lastLessons ?? [];
   const activeBlockersCount = summary?.activeBlockersCount ?? s.attentionHints?.activeBlockersCount ?? 0;
   const activeGoalsCount = summary?.activeGoalsCount ?? 0;
 
@@ -177,26 +177,43 @@ export function DetailPanel({ studentId, studentPreview, planetColor, onClose }:
           ) : (
             <>
               <section>
-                <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-600">Ultima aula</p>
-                {lastLesson ? (
-                  <button
-                    type="button"
-                    onClick={() => openLesson(lastLesson)}
-                    className="w-full rounded-lg border border-[#1a2040] bg-[#141832] px-3 py-2 text-left text-xs text-gray-300 transition hover:border-orbitus-accent/50 hover:bg-[#1a2040] focus:outline-none focus:ring-2 focus:ring-orbitus-accent"
-                  >
-                    <p className="font-medium text-gray-200">{lastLesson.topicName || 'Sem topico'}</p>
-                    <p className="mt-0.5 text-gray-500">
-                      {new Date(lastLesson.heldAt).toLocaleDateString('pt-BR')} - {lastLesson.rating}* - +{lastLesson.xpEarned} XP
-                    </p>
-                    {(lastLesson.notes || lastLesson.mediaUrl) && (
-                      <p className="mt-1 text-[10px] text-gray-500">
-                        {lastLesson.notes ? 'Com texto' : ''}
-                        {lastLesson.notes && lastLesson.mediaUrl ? ' - ' : ''}
-                        {lastLesson.mediaUrl ? 'Com material' : ''}
-                      </p>
-                    )}
-                    <p className="mt-1 text-[10px] text-orbitus-accent-bright">clicar para editar aula</p>
-                  </button>
+                <div className="mb-1.5 flex items-center justify-between gap-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-600">Historico recente</p>
+                  {recentLessons.length > 0 && (
+                    <span className="text-[10px] text-gray-700">{recentLessons.length} aula{recentLessons.length !== 1 ? 's' : ''}</span>
+                  )}
+                </div>
+                {recentLessons.length > 0 ? (
+                  <ul className="space-y-1.5">
+                    {recentLessons.map((lesson) => (
+                      <li key={lesson.id}>
+                        <button
+                          type="button"
+                          onClick={() => openLesson(lesson)}
+                          className="w-full rounded-lg border border-[#1a2040] bg-[#141832] px-3 py-2 text-left text-xs text-gray-300 transition hover:border-orbitus-accent/50 hover:bg-[#1a2040] focus:outline-none focus:ring-2 focus:ring-orbitus-accent"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="truncate font-medium text-gray-200">{lesson.topicName || 'Sem topico'}</p>
+                              <p className="mt-0.5 text-gray-500">
+                                {new Date(lesson.heldAt).toLocaleDateString('pt-BR')} - {lesson.rating}* - +{lesson.xpEarned} XP
+                              </p>
+                            </div>
+                            <span className="shrink-0 rounded-full bg-orbitus-accent/10 px-2 py-0.5 text-[10px] text-orbitus-accent-bright">
+                              {lesson.durationMinutes}m
+                            </span>
+                          </div>
+                          {(lesson.notes || lesson.mediaUrl) && (
+                            <p className="mt-1 text-[10px] text-gray-500">
+                              {lesson.notes ? 'Com texto' : ''}
+                              {lesson.notes && lesson.mediaUrl ? ' - ' : ''}
+                              {lesson.mediaUrl ? 'Com material' : ''}
+                            </p>
+                          )}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 ) : (
                   <p className="text-xs italic text-gray-600">Nenhuma aula registrada</p>
                 )}
