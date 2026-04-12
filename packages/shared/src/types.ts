@@ -50,6 +50,8 @@ export interface StudentSummary {
     topicName: string;
     rating: number;
     xpEarned: number;
+    notes?: string | null;
+    mediaUrl?: string | null;
   }>;
   skillBars: Array<{
     skillId: string;

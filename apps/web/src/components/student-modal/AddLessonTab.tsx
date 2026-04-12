@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { isDemoMode } from '@/lib/mock-data';
 import { apiFetch } from '@/lib/api/client';
+import { createTopic } from '@/lib/api/students';
 
 interface Topic {
   id: string;
@@ -14,6 +15,7 @@ interface Props {
   topics: Topic[];
   onSuccess: () => void;
   showToast: (msg: string) => void;
+  onTopicCreated?: (topic: Topic) => void;
 }
 
 function StarRating({ value, onChange }: { value: number; onChange: (v: number) => void }) {
@@ -34,7 +36,7 @@ function StarRating({ value, onChange }: { value: number; onChange: (v: number) 
   );
 }
 
-export function AddLessonTab({ studentId, topics, onSuccess, showToast }: Props) {
+export function AddLessonTab({ studentId, topics, onSuccess, showToast, onTopicCreated }: Props) {
   const [lessonTopic, setLessonTopic] = useState('');
   const [lessonDate, setLessonDate] = useState(() => new Date().toISOString().slice(0, 16));
   const [lessonDuration, setLessonDuration] = useState(60);
@@ -42,8 +44,28 @@ export function AddLessonTab({ studentId, topics, onSuccess, showToast }: Props)
   const [lessonNotes, setLessonNotes] = useState('');
   const [lessonSending, setLessonSending] = useState(false);
   const [lessonError, setLessonError] = useState('');
+  const [showNewTopic, setShowNewTopic] = useState(false);
+  const [newTopicName, setNewTopicName] = useState('');
+  const [creatingTopic, setCreatingTopic] = useState(false);
 
   const isDemo = isDemoMode();
+
+  async function handleCreateTopic() {
+    const name = newTopicName.trim();
+    if (!name) return;
+    setCreatingTopic(true);
+    try {
+      const topic = await createTopic(name);
+      onTopicCreated?.(topic);
+      setLessonTopic(topic.id);
+      setNewTopicName('');
+      setShowNewTopic(false);
+    } catch (err) {
+      setLessonError(err instanceof Error ? err.message : 'Falha ao criar tópico.');
+    } finally {
+      setCreatingTopic(false);
+    }
+  }
 
   async function submitLesson() {
     if (!lessonTopic) { setLessonError('Selecione o tópico.'); return; }
@@ -83,17 +105,50 @@ export function AddLessonTab({ studentId, topics, onSuccess, showToast }: Props)
         </div>
       )}
       <div>
-        <label className="mb-1.5 block text-xs font-medium text-gray-400">Tópico</label>
-        <select
-          value={lessonTopic}
-          onChange={(e) => setLessonTopic(e.target.value)}
-          className="input-field w-full text-sm"
-        >
-          <option value="">Selecione o tópico…</option>
-          {topics.map((t) => (
-            <option key={t.id} value={t.id}>{t.name}</option>
-          ))}
-        </select>
+        <div className="mb-1.5 flex items-center justify-between">
+          <label className="text-xs font-medium text-gray-400">Tópico</label>
+          {!isDemo && (
+            <button
+              type="button"
+              onClick={() => setShowNewTopic((v) => !v)}
+              className="text-xs text-orbitus-accent hover:underline"
+            >
+              {showNewTopic ? 'Cancelar' : '+ Nova categoria'}
+            </button>
+          )}
+        </div>
+        {showNewTopic ? (
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newTopicName}
+              onChange={(e) => setNewTopicName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void handleCreateTopic(); } }}
+              placeholder="Nome da nova categoria…"
+              className="input-field flex-1 text-sm"
+              autoFocus
+            />
+            <button
+              type="button"
+              onClick={() => void handleCreateTopic()}
+              disabled={creatingTopic || !newTopicName.trim()}
+              className="rounded bg-orbitus-accent px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50 hover:opacity-90"
+            >
+              {creatingTopic ? '…' : 'Criar'}
+            </button>
+          </div>
+        ) : (
+          <select
+            value={lessonTopic}
+            onChange={(e) => setLessonTopic(e.target.value)}
+            className="input-field w-full text-sm"
+          >
+            <option value="">Selecione o tópico…</option>
+            {topics.map((t) => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
+        )}
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>

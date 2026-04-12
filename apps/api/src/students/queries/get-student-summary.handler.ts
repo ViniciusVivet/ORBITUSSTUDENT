@@ -53,6 +53,8 @@ export class GetStudentSummaryHandler implements IQueryHandler<GetStudentSummary
         topicName: l.topic?.name ?? 'Aula Livre',
         rating: l.rating,
         xpEarned: l.xpEarned,
+        notes: l.notes ?? null,
+        mediaUrl: l.mediaUrl ?? null,
       })),
       skillBars: skillProgress.map((sp) => ({
         skillId: sp.skill.id,

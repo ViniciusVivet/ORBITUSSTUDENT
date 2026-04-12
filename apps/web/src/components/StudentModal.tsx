@@ -21,7 +21,7 @@ interface Props {
 }
 
 export function StudentModal({ studentId, studentPreview, onClose }: Props) {
-  const { summary, loading, topics, blockers, goals, toast, showToast, reload } = useStudentModal(studentId, studentPreview);
+  const { summary, loading, topics, blockers, goals, toast, showToast, reload, addTopic } = useStudentModal(studentId, studentPreview);
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -162,6 +162,7 @@ export function StudentModal({ studentId, studentPreview, onClose }: Props) {
                     topics={topics}
                     onSuccess={() => { void reload(); setActiveTab('overview'); }}
                     showToast={showToast}
+                    onTopicCreated={addTopic}
                   />
                 )}
                 {activeTab === 'blockers' && (

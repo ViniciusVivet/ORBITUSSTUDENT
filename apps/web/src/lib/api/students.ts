@@ -106,6 +106,15 @@ export async function fetchTopics(): Promise<TopicOption[]> {
   }
 }
 
+export async function createTopic(name: string): Promise<TopicOption> {
+  if (isDemoMode()) throw new Error('Modo demo — conecte a API para criar tópicos.');
+  return apiFetch<TopicOption>('/students/topics', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+}
+
 export async function fetchAttentionQueue(limit = 12): Promise<AttentionQueueItem[]> {
   if (isDemoMode()) return getMockAttentionQueue(limit);
   try {

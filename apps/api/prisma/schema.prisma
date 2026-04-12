@@ -158,6 +158,7 @@ model Lesson {
   topicId         String?  @map("topic_id")
   rating          Int
   notes           String?  @db.Text
+  mediaUrl        String?  @map("media_url")
   xpEarned        Int      @map("xp_earned")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")

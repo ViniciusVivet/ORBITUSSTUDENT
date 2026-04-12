@@ -1,6 +1,11 @@
 import { isDemoMode } from '@/lib/mock-data';
 import { apiFetch } from './client';
 
+export interface UpdateLessonData {
+  notes?: string | null;
+  mediaUrl?: string | null;
+}
+
 export interface RegisterLessonData {
   topicId?: string;
   heldAt: string;
@@ -21,6 +26,19 @@ export async function registerLesson(
   }
   return apiFetch<{ xpEarned: number }>(`/students/${studentId}/lessons`, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateLesson(
+  studentId: string,
+  lessonId: string,
+  data: UpdateLessonData,
+): Promise<void> {
+  if (isDemoMode()) return;
+  await apiFetch(`/students/${studentId}/lessons/${lessonId}`, {
+    method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });

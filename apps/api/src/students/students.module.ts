@@ -18,6 +18,8 @@ import { UpdateBlockerHandler } from './commands/update-blocker.handler';
 import { CreateGoalHandler } from './commands/create-goal.handler';
 import { UpdateGoalHandler } from './commands/update-goal.handler';
 import { UpsertAttendanceHandler } from './commands/upsert-attendance.handler';
+import { CreateTopicHandler } from './commands/create-topic.handler';
+import { UpdateLessonHandler } from './commands/update-lesson.handler';
 
 const QueryHandlers = [
   ListStudentsHandler,
@@ -39,6 +41,8 @@ const CommandHandlers = [
   CreateGoalHandler,
   UpdateGoalHandler,
   UpsertAttendanceHandler,
+  CreateTopicHandler,
+  UpdateLessonHandler,
 ];
 
 @Module({

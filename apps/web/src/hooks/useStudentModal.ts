@@ -24,6 +24,7 @@ export interface UseStudentModalReturn {
   toast: string;
   showToast: (msg: string) => void;
   reload: () => void;
+  addTopic: (topic: TopicOption) => void;
 }
 
 export function useStudentModal(studentId: string, studentPreview: StudentListItem): UseStudentModalReturn {
@@ -75,5 +76,9 @@ export function useStudentModal(studentId: string, studentPreview: StudentListIt
 
   useEffect(() => { void load(); }, [load]);
 
-  return { summary, loading, topics, blockers, goals, toast, showToast, reload: load };
+  const addTopic = useCallback((topic: TopicOption) => {
+    setTopics((prev) => [...prev, topic]);
+  }, []);
+
+  return { summary, loading, topics, blockers, goals, toast, showToast, reload: load, addTopic };
 }

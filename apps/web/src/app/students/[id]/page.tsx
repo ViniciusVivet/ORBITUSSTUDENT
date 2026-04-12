@@ -95,6 +95,15 @@ export default function StudentPage() {
     void loadSummary();
   }, [showToast, loadSummary]);
 
+  const handleTopicCreated = useCallback((topic: TopicOption) => {
+    setTopics((prev) => (prev.some((t) => t.id === topic.id) ? prev : [...prev, topic]));
+  }, []);
+
+  const handleLessonUpdate = useCallback(() => {
+    showToast('Aula atualizada.');
+    void loadSummary();
+  }, [showToast, loadSummary]);
+
   const handleBlockersUpdate = useCallback(() => {
     showToast('Bloqueio atualizado.');
     void loadSummary();
@@ -264,7 +273,12 @@ export default function StudentPage() {
           />
         )}
 
-        <RegisterLessonForm studentId={id} topics={topics} onSuccess={handleLessonSuccess} />
+        <RegisterLessonForm
+          studentId={id}
+          topics={topics}
+          onSuccess={handleLessonSuccess}
+          onTopicCreated={handleTopicCreated}
+        />
 
         <BlockersList studentId={id} blockers={blockers} onUpdate={handleBlockersUpdate} />
 
@@ -295,7 +309,7 @@ export default function StudentPage() {
           </div>
         )}
 
-        <LessonTimeline lessons={lastLessons} />
+        <LessonTimeline studentId={id} lessons={lastLessons} onLessonUpdate={handleLessonUpdate} />
 
         <AttendanceHistory studentId={id} />
       </div>

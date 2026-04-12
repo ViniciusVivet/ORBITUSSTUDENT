@@ -26,6 +26,10 @@ import { ListClassGroupsQuery } from './queries/list-class-groups.query';
 import { CreateGoalCommand } from './commands/create-goal.command';
 import { UpdateGoalCommand } from './commands/update-goal.command';
 import { CreateGoalDto } from './dto/create-goal.dto';
+import { CreateTopicDto } from './dto/create-topic.dto';
+import { CreateTopicCommand } from './commands/create-topic.command';
+import { UpdateLessonDto } from './dto/update-lesson.dto';
+import { UpdateLessonCommand } from './commands/update-lesson.command';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { UpdateStudentCommand } from './commands/update-student.command';
 import { GetStudentAttendanceQuery } from './queries/get-student-attendance.query';
@@ -47,6 +51,13 @@ export class StudentsController {
   @ApiOperation({ summary: 'Listar tópicos (para formulário de aula)' })
   async listTopics() {
     return this.queryBus.execute(new ListTopicsQuery());
+  }
+
+  @Post('topics')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Criar novo tópico' })
+  async createTopic(@Body() dto: CreateTopicDto, @CurrentUser() user: JwtPayload) {
+    return this.commandBus.execute(new CreateTopicCommand(user.id, dto.name));
   }
 
   @Get('class-groups')
@@ -151,6 +162,23 @@ export class StudentsController {
         durationMinutes: dto.durationMinutes,
         rating: dto.rating,
         notes: dto.notes,
+      }),
+    );
+  }
+
+  @Patch(':id/lessons/:lessonId')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Atualizar aula (notas e mídia)' })
+  async updateLesson(
+    @Param('id') id: string,
+    @Param('lessonId') lessonId: string,
+    @Body() dto: UpdateLessonDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.commandBus.execute(
+      new UpdateLessonCommand(id, lessonId, user.id, {
+        notes: dto.notes,
+        mediaUrl: dto.mediaUrl,
       }),
     );
   }
