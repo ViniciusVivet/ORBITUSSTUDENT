@@ -79,6 +79,10 @@ export default function ChamadaPage() {
     setAttendance((prev) => ({ ...prev, [studentId]: { ...prev[studentId], note } }));
   }
 
+  function setGrade(studentId: string, grade: string) {
+    setAttendance((prev) => ({ ...prev, [studentId]: { ...prev[studentId], grade } }));
+  }
+
   async function save() {
     if (isDemoMode()) { setError('Modo demo — conecte a API para salvar chamadas.'); return; }
     const token = getToken();
@@ -190,8 +194,12 @@ export default function ChamadaPage() {
                 </div>
               </div>
               {entry.status !== 'present' && (
-                <input type="text" value={entry.note} onChange={(e) => setNote(s.id, e.target.value)}
-                  placeholder="Observação (opcional)" className="input-field w-full text-xs mt-1" />
+                <div className="mt-1 flex gap-2">
+                  <input type="text" value={entry.note} onChange={(e) => setNote(s.id, e.target.value)}
+                    placeholder="Observação (opcional)" className="input-field flex-1 text-xs" />
+                  <input type="number" min={0} max={10} step={0.5} value={entry.grade} onChange={(e) => setGrade(s.id, e.target.value)}
+                    placeholder="Nota" className="input-field w-20 text-xs" />
+                </div>
               )}
             </div>
           );

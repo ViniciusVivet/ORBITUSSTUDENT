@@ -15,6 +15,7 @@ import { BlockersList } from '@/components/student/BlockersList';
 import { GoalsList } from '@/components/student/GoalsList';
 import { StudentEditForm } from '@/components/student/StudentEditForm';
 import { LessonTimeline } from '@/components/student/LessonTimeline';
+import { AttendanceHistory } from '@/components/student/AttendanceHistory';
 
 export default function StudentPage() {
   const params = useParams();
@@ -295,6 +296,8 @@ export default function StudentPage() {
         )}
 
         <LessonTimeline lessons={lastLessons} />
+
+        <AttendanceHistory studentId={id} />
       </div>
     </main>
   );

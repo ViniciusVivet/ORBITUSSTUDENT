@@ -7,7 +7,7 @@ export interface RosterFiltersState {
   filterTurma: string;
   filterStatus: string;
   filterNoLessonDays: number | '';
-  sortBy: 'name' | 'xp' | 'level';
+  sortBy: 'name' | 'xp' | 'level' | 'attention';
   rosterView: 'cards' | 'table';
 }
 
@@ -72,13 +72,14 @@ export function RosterFilters({ filters, classGroups, onChange, onClear, hideSea
       )}
       <select
         value={sortBy}
-        onChange={(e) => onChange({ sortBy: e.target.value as 'name' | 'xp' | 'level' })}
+        onChange={(e) => onChange({ sortBy: e.target.value as 'name' | 'xp' | 'level' | 'attention' })}
         className="input-field min-h-11 w-full text-sm sm:min-h-0 sm:w-auto"
         aria-label="Ordenar por"
       >
         <option value="name">Nome A–Z</option>
         <option value="xp">XP ↓</option>
         <option value="level">Nível ↓</option>
+        <option value="attention">⚠ Atenção</option>
       </select>
       <div
         className="inline-flex overflow-hidden rounded-lg border border-orbitus-border sm:w-auto"

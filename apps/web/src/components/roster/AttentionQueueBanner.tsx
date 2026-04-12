@@ -5,12 +5,14 @@ import type { AttentionQueueItem } from '@orbitus/shared';
 
 interface Props {
   items: AttentionQueueItem[];
+  expanded?: boolean;
+  onToggleExpand?: () => void;
 }
 
-export function AttentionQueueBanner({ items }: Props) {
+export function AttentionQueueBanner({ items, expanded = false, onToggleExpand }: Props) {
   if (items.length === 0) return null;
 
-  const displayed = items.slice(0, 4);
+  const displayed = expanded ? items : items.slice(0, 6);
 
   return (
     <section
@@ -26,12 +28,24 @@ export function AttentionQueueBanner({ items }: Props) {
           Fila de atenção
         </h2>
         <span className="rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-amber-400">
-          {items.length}
+          {items.length}{expanded ? '' : '+'}
         </span>
+        {onToggleExpand && (
+          <button
+            type="button"
+            onClick={onToggleExpand}
+            className="ml-auto text-[10px] text-amber-500/70 hover:text-amber-400 transition"
+          >
+            {expanded ? 'ver menos' : `ver todos (${items.length})`}
+          </button>
+        )}
       </div>
 
-      {/* Horizontal scroll of compact cards */}
-      <div className="flex gap-2 overflow-x-auto pb-1" role="list">
+      {/* Cards */}
+      <div
+        className={expanded ? 'flex flex-wrap gap-2' : 'flex gap-2 overflow-x-auto pb-1'}
+        role="list"
+      >
         {displayed.map((row) => (
           <Link
             key={row.studentId}
@@ -45,14 +59,12 @@ export function AttentionQueueBanner({ items }: Props) {
               {row.classGroup?.name && (
                 <p className="text-[10px] text-gray-600 truncate">{row.classGroup.name}</p>
               )}
+              {row.reasons?.length > 0 && (
+                <p className="text-[10px] text-amber-600 truncate max-w-[120px]">{row.reasons[0]}</p>
+              )}
             </div>
           </Link>
         ))}
-        {items.length > 4 && (
-          <div className="shrink-0 flex items-center px-2 text-xs text-gray-600">
-            +{items.length - 4} mais
-          </div>
-        )}
       </div>
     </section>
   );

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { isDemoMode, getMockAttentionQueue, MOCK_GOALS } from '@/lib/mock-data';
+import { isDemoMode, getMockAttentionQueue, MOCK_GOALS, MOCK_STUDENTS } from '@/lib/mock-data';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -33,10 +33,10 @@ export default function HojePage() {
     if (isDemoMode()) {
       const q = getMockAttentionQueue(10);
       setNoLesson(q.map((s) => ({ id: s.studentId, displayName: s.displayName, classGroup: s.classGroup, daysSinceLastLesson: null })));
-      setOverdue(MOCK_GOALS.filter((g) => g.status !== 'completed' && g.deadlineAt && new Date(g.deadlineAt) < new Date()).map((g) => ({
-        id: g.id, title: g.title, deadlineAt: g.deadlineAt,
-        student: { id: g.studentId, displayName: g.studentId, classGroup: null },
-      })));
+      setOverdue(MOCK_GOALS.filter((g) => g.status !== 'completed' && g.deadlineAt && new Date(g.deadlineAt) < new Date()).map((g) => {
+        const st = MOCK_STUDENTS.find((s) => s.id === g.studentId);
+        return { id: g.id, title: g.title, deadlineAt: g.deadlineAt, student: { id: g.studentId, displayName: st?.displayName ?? 'Aluno', classGroup: st?.classGroup ?? null } };
+      }));
       setSessions([]);
       setLoading(false);
       return;

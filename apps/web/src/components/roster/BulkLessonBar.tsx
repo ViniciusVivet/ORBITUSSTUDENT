@@ -13,6 +13,7 @@ interface Props {
   onSelectAll: () => void;
   onCancel: () => void;
   onDone: (failedIds: Set<string>) => void;
+  onRetryFailed: (ids: Set<string>) => void;
 }
 
 type BulkStatus = 'idle' | 'saving' | 'done';
@@ -40,7 +41,7 @@ function StarRating({ value, onChange }: { value: number; onChange: (v: number) 
   );
 }
 
-export function BulkLessonBar({ selectedStudents, allStudents, onSelectAll, onCancel, onDone }: Props) {
+export function BulkLessonBar({ selectedStudents, allStudents, onSelectAll, onCancel, onDone, onRetryFailed }: Props) {
   const [topics, setTopics] = useState<TopicOption[]>([]);
   const [topicId, setTopicId] = useState('');
   const [rating, setRating] = useState(4);
@@ -55,6 +56,7 @@ export function BulkLessonBar({ selectedStudents, allStudents, onSelectAll, onCa
   const [total, setTotal] = useState(0);
   const [successCount, setSuccessCount] = useState(0);
   const [doneMessage, setDoneMessage] = useState('');
+  const [failedIdsDone, setFailedIdsDone] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchTopics().then(setTopics).catch(() => setTopics([]));
@@ -90,15 +92,18 @@ export function BulkLessonBar({ selectedStudents, allStudents, onSelectAll, onCa
 
     const succeeded = results.filter((r) => r.status === 'fulfilled').length;
     setSuccessCount(succeeded);
+    setFailedIdsDone(failedIds);
     setDoneMessage(
       failedIds.size === 0
         ? `${succeeded} aula(s) registrada(s) com sucesso!`
         : `${succeeded} registrada(s), ${failedIds.size} com falha.`,
     );
     setBulkStatus('done');
-    setTimeout(() => {
+    if (failedIds.size === 0) {
+      setTimeout(() => onDone(failedIds), 2000);
+    } else {
       onDone(failedIds);
-    }, 2000);
+    }
   }
 
   const count = selectedStudents.length;
@@ -112,9 +117,25 @@ export function BulkLessonBar({ selectedStudents, allStudents, onSelectAll, onCa
       className="fixed bottom-0 left-0 right-0 z-40 border-t border-orbitus-border bg-orbitus-surface p-4"
     >
       {status === 'done' ? (
-        <div className="flex items-center justify-center gap-2 text-sm font-semibold text-green-400">
-          <span>✓</span>
-          <span>{doneMessage}</span>
+        <div className="flex flex-wrap items-center justify-center gap-3 text-sm">
+          <span className={failedIdsDone.size > 0 ? 'font-semibold text-amber-400' : 'font-semibold text-green-400'}>
+            {failedIdsDone.size === 0 ? '✓ ' : '⚠ '}{doneMessage}
+          </span>
+          {failedIdsDone.size > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setBulkStatus('idle');
+                setProgress(0);
+                setSuccessCount(0);
+                onRetryFailed(failedIdsDone);
+              }}
+              className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-400 hover:bg-amber-500/20"
+            >
+              Tentar novamente ({failedIdsDone.size})
+            </button>
+          )}
+          {failedIdsDone.size === 0 && <span className="text-green-400">✓</span>}
         </div>
       ) : status === 'saving' ? (
         <div className="flex items-center justify-center gap-3 text-sm text-gray-300">

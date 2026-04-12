@@ -6,11 +6,11 @@ export type RosterFiltersSnapshotV1 = {
   filterTurma: string;
   filterStatus: string;
   filterNoLessonDays: number | '';
-  sortBy: 'name' | 'xp' | 'level';
+  sortBy: 'name' | 'xp' | 'level' | 'attention';
 };
 
 function isSortBy(v: unknown): v is RosterFiltersSnapshotV1['sortBy'] {
-  return v === 'name' || v === 'xp' || v === 'level';
+  return v === 'name' || v === 'xp' || v === 'level' || v === 'attention';
 }
 
 export function loadRosterFiltersSnapshot(): RosterFiltersSnapshotV1 | null {

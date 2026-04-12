@@ -15,7 +15,7 @@ export interface RosterFiltersState {
   filterTurma: string;
   filterStatus: string;
   filterNoLessonDays: number | '';
-  sortBy: 'name' | 'xp' | 'level';
+  sortBy: 'name' | 'xp' | 'level' | 'attention';
   rosterView: 'cards' | 'table';
 }
 
@@ -33,6 +33,8 @@ export interface UseRosterDataReturn {
   hasMore: boolean;
   displayCount: number;
   rosterFilterDescription: string;
+  attentionQueueExpanded: boolean;
+  toggleAttentionQueueExpanded: () => void;
   setFilters: (partial: Partial<RosterFiltersState>) => void;
   clearFilters: () => void;
   loadMore: () => void;
@@ -53,6 +55,7 @@ export function useRosterData(): UseRosterDataReturn {
   const [loadingMore, setLoadingMore] = useState(false);
   const [displayCount, setDisplayCount] = useState(PAGE_SIZE);
   const [retryTrigger, setRetryTrigger] = useState(0);
+  const [attentionQueueExpanded, setAttentionQueueExpanded] = useState(false);
   const [rosterFiltersReady, setRosterFiltersReady] = useState(false);
   const rosterFiltersHydratedRef = useRef(false);
 
@@ -162,7 +165,7 @@ export function useRosterData(): UseRosterDataReturn {
       classGroupId: filters.filterTurma,
       status: filters.filterStatus,
       noLessonSinceDays: filters.filterNoLessonDays,
-      sortBy: filters.sortBy,
+      sortBy: filters.sortBy === 'attention' ? 'name' : filters.sortBy,
       limit: PAGE_SIZE,
       offset: 0,
     })
@@ -172,16 +175,22 @@ export function useRosterData(): UseRosterDataReturn {
         setError('');
         setDisplayCount(PAGE_SIZE);
       })
-      .catch(() => setError('Falha ao carregar. A API está rodando?'))
+      .catch((e: unknown) => {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (msg.includes('401')) setError('Sessão expirada — faça login novamente.');
+        else if (msg.includes('500') || msg.includes('503')) setError(`Erro interno na API: ${msg}`);
+        else if (msg.toLowerCase().includes('failed to fetch') || msg.toLowerCase().includes('network')) setError('Sem conexão com a API. Verifique se está online.');
+        else setError(msg || 'Falha ao carregar alunos.');
+      })
       .finally(() => setLoading(false));
   }, [rosterFiltersReady, searchDebounced, filters.filterTurma, filters.filterStatus, filters.filterNoLessonDays, filters.sortBy, retryTrigger]);
 
-  // Fetch attention queue
+  // Fetch attention queue (12 normal, 30 expanded)
   useEffect(() => {
     const token = getToken();
     if (!token) return;
-    fetchAttentionQueue(12).then(setAttentionQueue).catch(() => setAttentionQueue([]));
-  }, [retryTrigger]);
+    fetchAttentionQueue(attentionQueueExpanded ? 30 : 12).then(setAttentionQueue).catch(() => setAttentionQueue([]));
+  }, [retryTrigger, attentionQueueExpanded]);
 
   const classGroups = useMemo(() => {
     const map = new Map<string, string>();
@@ -191,8 +200,19 @@ export function useRosterData(): UseRosterDataReturn {
     return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
   }, [students]);
 
+  function attentionScore(s: StudentListItem): number {
+    const h = s.attentionHints;
+    if (!h) return 0;
+    return (h.activeBlockersCount ?? 0) * 3 +
+      (h.overdueGoalsCount ?? 0) * 2 +
+      (h.daysSinceLastLesson === null ? 5 : h.daysSinceLastLesson >= 7 ? 3 : 0);
+  }
+
   const filteredList = useMemo(() => {
-    if (!isDemoMode()) return students;
+    if (!isDemoMode()) {
+      if (filters.sortBy === 'attention') return [...students].sort((a, b) => attentionScore(b) - attentionScore(a));
+      return students;
+    }
     const list = students.filter((s) => {
       const matchSearch = !filters.search.trim() || s.displayName.toLowerCase().includes(filters.search.toLowerCase()) || (s.fullName?.toLowerCase().includes(filters.search.toLowerCase()));
       const matchTurma = !filters.filterTurma || s.classGroup?.id === filters.filterTurma;
@@ -203,8 +223,10 @@ export function useRosterData(): UseRosterDataReturn {
       if (filters.sortBy === 'name') return (a.displayName ?? '').localeCompare(b.displayName ?? '', 'pt-BR');
       if (filters.sortBy === 'xp') return (b.xp ?? 0) - (a.xp ?? 0);
       if (filters.sortBy === 'level') return (b.level ?? 0) - (a.level ?? 0);
+      if (filters.sortBy === 'attention') return attentionScore(b) - attentionScore(a);
       return 0;
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [students, filters.search, filters.filterTurma, filters.filterStatus, filters.sortBy]);
 
   const displayedList = useMemo(() => {
@@ -229,7 +251,7 @@ export function useRosterData(): UseRosterDataReturn {
       classGroupId: filters.filterTurma,
       status: filters.filterStatus,
       noLessonSinceDays: filters.filterNoLessonDays,
-      sortBy: filters.sortBy,
+      sortBy: filters.sortBy === 'attention' ? 'name' : filters.sortBy,
       limit: PAGE_SIZE,
       offset: students.length,
     })
@@ -242,6 +264,10 @@ export function useRosterData(): UseRosterDataReturn {
   const retry = useCallback(() => {
     setError('');
     setRetryTrigger((t) => t + 1);
+  }, []);
+
+  const toggleAttentionQueueExpanded = useCallback(() => {
+    setAttentionQueueExpanded((v) => !v);
   }, []);
 
   const rosterFilterDescription = useMemo(() => {
@@ -258,7 +284,7 @@ export function useRosterData(): UseRosterDataReturn {
       parts.push(`sem aula ha ${filters.filterNoLessonDays}+ dias`);
     } else parts.push('filtro sem aula=off');
     parts.push(
-      `ordenacao=${filters.sortBy === 'name' ? 'nome A-Z' : filters.sortBy === 'xp' ? 'XP (maior primeiro)' : 'nivel (maior primeiro)'}`,
+      `ordenacao=${filters.sortBy === 'name' ? 'nome A-Z' : filters.sortBy === 'xp' ? 'XP maior' : filters.sortBy === 'level' ? 'nivel maior' : 'maior atenção primeiro'}`,
     );
     if (!isDemoMode() && totalFromApi != null && students.length < totalFromApi) {
       parts.push(`NOTA: lista na tela ${students.length}/${totalFromApi} alunos (exporta so a pagina carregada)`);
@@ -288,5 +314,7 @@ export function useRosterData(): UseRosterDataReturn {
     loadMore,
     retry,
     setError,
+    attentionQueueExpanded,
+    toggleAttentionQueueExpanded,
   };
 }

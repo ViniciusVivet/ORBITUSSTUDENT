@@ -42,6 +42,8 @@ function RosterPage() {
     loadMore,
     retry,
     setError,
+    attentionQueueExpanded,
+    toggleAttentionQueueExpanded,
   } = useRosterData();
 
   const [selectedStudent, setSelectedStudent] = useState<StudentListItem | null>(null);
@@ -342,7 +344,11 @@ function RosterPage() {
 
         {/* Scrollable grid area */}
         <div id="main" className="flex-1 overflow-y-auto px-3 py-3">
-          <AttentionQueueBanner items={attentionQueue} />
+          <AttentionQueueBanner
+            items={attentionQueue}
+            expanded={attentionQueueExpanded}
+            onToggleExpand={toggleAttentionQueueExpanded}
+          />
 
           {showDemoBanner && (
             <div className="mb-3 rounded-lg border border-orbitus-xp/30 bg-orbitus-xp/8 px-3 py-2 text-xs text-orbitus-xp">
@@ -578,7 +584,10 @@ function RosterPage() {
               onCancel={exitBulkMode}
               onDone={(failedIds) => {
                 setBulkFailedIds(failedIds);
-                exitBulkMode();
+                if (failedIds.size === 0) exitBulkMode();
+              }}
+              onRetryFailed={(ids) => {
+                setSelectedIds(ids);
               }}
             />
           )}
