@@ -17,6 +17,7 @@ import { StudentEditForm } from '@/components/student/StudentEditForm';
 import { LessonTimeline } from '@/components/student/LessonTimeline';
 import { AttendanceHistory } from '@/components/student/AttendanceHistory';
 import { StudentReportCard } from '@/components/student/StudentReportCard';
+import { StudentAiAssistant } from '@/components/student/StudentAiAssistant';
 
 export default function StudentPage() {
   const params = useParams();
@@ -280,6 +281,8 @@ export default function StudentPage() {
           goals={goals}
           generatedAtLabel={generatedAtLabel}
         />
+
+        <StudentAiAssistant summary={summary} blockers={blockers} goals={goals} />
 
         <RegisterLessonForm
           studentId={id}
