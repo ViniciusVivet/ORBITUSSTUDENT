@@ -10,6 +10,14 @@ import { loadRosterFiltersSnapshot, saveRosterFiltersSnapshot } from '@/lib/rost
 
 const PAGE_SIZE = 20;
 
+function attentionScore(s: StudentListItem): number {
+  const h = s.attentionHints;
+  if (!h) return 0;
+  return (h.activeBlockersCount ?? 0) * 3 +
+    (h.overdueGoalsCount ?? 0) * 2 +
+    (h.daysSinceLastLesson === null ? 5 : h.daysSinceLastLesson >= 7 ? 3 : 0);
+}
+
 export interface RosterFiltersState {
   search: string;
   filterTurma: string;
@@ -200,14 +208,6 @@ export function useRosterData(): UseRosterDataReturn {
     return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
   }, [students]);
 
-  function attentionScore(s: StudentListItem): number {
-    const h = s.attentionHints;
-    if (!h) return 0;
-    return (h.activeBlockersCount ?? 0) * 3 +
-      (h.overdueGoalsCount ?? 0) * 2 +
-      (h.daysSinceLastLesson === null ? 5 : h.daysSinceLastLesson >= 7 ? 3 : 0);
-  }
-
   const filteredList = useMemo(() => {
     if (!isDemoMode()) {
       if (filters.sortBy === 'attention') return [...students].sort((a, b) => attentionScore(b) - attentionScore(a));
@@ -226,7 +226,6 @@ export function useRosterData(): UseRosterDataReturn {
       if (filters.sortBy === 'attention') return attentionScore(b) - attentionScore(a);
       return 0;
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [students, filters.search, filters.filterTurma, filters.filterStatus, filters.sortBy]);
 
   const displayedList = useMemo(() => {

@@ -1,24 +1,16 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { StudentSummary, StudentListItem } from '@orbitus/shared';
-import { isDemoMode, getMockSummary, MOCK_BLOCKERS, MOCK_GOALS, type BlockerItem, type GoalItem } from '@/lib/mock-data';
-import { getToken, API_URL } from '@/lib/api/client';
+import type { StudentListItem } from '@orbitus/shared';
+import { useStudentModal } from '@/hooks/useStudentModal';
 import { OverviewTab } from '@/components/student-modal/OverviewTab';
 import { AddLessonTab } from '@/components/student-modal/AddLessonTab';
 import { BlockersTab } from '@/components/student-modal/BlockersTab';
 import { GoalsTab } from '@/components/student-modal/GoalsTab';
+import { useState } from 'react';
 
 const FOCUSABLE = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
-const MOCK_TOPICS = [
-  { id: 't1', name: 'Introdução ao HTML' },
-  { id: 't2', name: 'Lógica de programação' },
-  { id: 't3', name: 'Planilhas básicas' },
-  { id: 't4', name: 'JavaScript fundamentals' },
-  { id: 't5', name: 'CSS e layout' },
-];
 
 type Tab = 'overview' | 'lesson' | 'blockers' | 'goals';
 
@@ -29,50 +21,9 @@ interface Props {
 }
 
 export function StudentModal({ studentId, studentPreview, onClose }: Props) {
-  const [summary, setSummary] = useState<StudentSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { summary, loading, topics, blockers, goals, toast, showToast, reload } = useStudentModal(studentId, studentPreview);
   const [activeTab, setActiveTab] = useState<Tab>('overview');
-  const [topics, setTopics] = useState(MOCK_TOPICS);
-  const [blockers, setBlockers] = useState<BlockerItem[]>([]);
-  const [goals, setGoals] = useState<GoalItem[]>([]);
-  const [toast, setToast] = useState('');
   const modalRef = useRef<HTMLDivElement>(null);
-
-  const showToast = useCallback((msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(''), 3000);
-  }, []);
-
-  const load = useCallback(async () => {
-    if (isDemoMode()) {
-      setSummary(getMockSummary(studentPreview));
-      setBlockers(MOCK_BLOCKERS.filter((b) => b.studentId === studentId));
-      setGoals(MOCK_GOALS.filter((g) => g.studentId === studentId));
-      setLoading(false);
-      return;
-    }
-    const token = getToken();
-    if (!token) { setSummary(getMockSummary(studentPreview)); setLoading(false); return; }
-    try {
-      const [sumRes, blRes, goRes, topRes] = await Promise.allSettled([
-        fetch(`${API_URL}/students/${studentId}/summary`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API_URL}/students/${studentId}/blockers`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API_URL}/students/${studentId}/goals`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API_URL}/students/topics`, { headers: { Authorization: `Bearer ${token}` } }),
-      ]);
-      if (sumRes.status === 'fulfilled' && sumRes.value.ok) setSummary(await sumRes.value.json());
-      else setSummary(getMockSummary(studentPreview));
-      if (blRes.status === 'fulfilled' && blRes.value.ok) { const d = await blRes.value.json(); if (Array.isArray(d)) setBlockers(d); }
-      if (goRes.status === 'fulfilled' && goRes.value.ok) { const d = await goRes.value.json(); if (Array.isArray(d)) setGoals(d); }
-      if (topRes.status === 'fulfilled' && topRes.value.ok) { const d = await topRes.value.json(); if (Array.isArray(d) && d.length > 0) setTopics(d); }
-    } catch {
-      setSummary(getMockSummary(studentPreview));
-    } finally {
-      setLoading(false);
-    }
-  }, [studentId, studentPreview]);
-
-  useEffect(() => { void load(); }, [load]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -209,7 +160,7 @@ export function StudentModal({ studentId, studentPreview, onClose }: Props) {
                   <AddLessonTab
                     studentId={studentId}
                     topics={topics}
-                    onSuccess={() => { void load(); setActiveTab('overview'); }}
+                    onSuccess={() => { void reload(); setActiveTab('overview'); }}
                     showToast={showToast}
                   />
                 )}
@@ -217,7 +168,7 @@ export function StudentModal({ studentId, studentPreview, onClose }: Props) {
                   <BlockersTab
                     studentId={studentId}
                     blockers={blockers}
-                    onUpdate={() => void load()}
+                    onUpdate={() => void reload()}
                     showToast={showToast}
                   />
                 )}
@@ -225,7 +176,7 @@ export function StudentModal({ studentId, studentPreview, onClose }: Props) {
                   <GoalsTab
                     studentId={studentId}
                     goals={goals}
-                    onUpdate={() => void load()}
+                    onUpdate={() => void reload()}
                     showToast={showToast}
                   />
                 )}

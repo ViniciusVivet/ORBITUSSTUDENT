@@ -7,7 +7,7 @@ import {
   getMockAttentionQueue,
   MOCK_CLASS_GROUPS,
 } from '@/lib/mock-data';
-import { apiFetch, API_URL, getToken } from './client';
+import { apiFetch } from './client';
 
 const MOCK_TOPICS = [
   { id: 't1', name: 'Introdução ao HTML', slug: 'intro-html', xpWeight: 1 },
@@ -88,42 +88,28 @@ export async function fetchClassGroupsForStudents(): Promise<{ id: string; name:
   if (isDemoMode()) {
     return MOCK_CLASS_GROUPS.map((g) => ({ id: g.id, name: g.name }));
   }
-  const token = getToken();
-  if (!token) return [];
-  const res = await fetch(`${API_URL}/students/class-groups`, { headers: { Authorization: `Bearer ${token}` } });
-  if (!res.ok) return [];
-  const list = await res.json();
-  return Array.isArray(list) ? list.map((g: { id: string; name: string }) => ({ id: g.id, name: g.name })) : [];
+  try {
+    const list = await apiFetch<{ id: string; name: string }[]>('/students/class-groups');
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
 }
 
 export async function fetchTopics(): Promise<TopicOption[]> {
-  if (isDemoMode()) {
-    return MOCK_TOPICS;
-  }
-  const token = getToken();
-  if (!token) return MOCK_TOPICS;
+  if (isDemoMode()) return MOCK_TOPICS;
   try {
-    const res = await fetch(`${API_URL}/students/topics`, { headers: { Authorization: `Bearer ${token}` } });
-    if (!res.ok) return MOCK_TOPICS;
-    const list = await res.json();
-    return Array.isArray(list) && list.length > 0 ? list : MOCK_TOPICS;
+    const list = await apiFetch<TopicOption[]>('/students/topics');
+    return Array.isArray(list) && list.length > 0 ? list : [];
   } catch {
-    return MOCK_TOPICS;
+    return [];
   }
 }
 
 export async function fetchAttentionQueue(limit = 12): Promise<AttentionQueueItem[]> {
-  if (isDemoMode()) {
-    return getMockAttentionQueue(limit);
-  }
-  const token = getToken();
-  if (!token) return [];
+  if (isDemoMode()) return getMockAttentionQueue(limit);
   try {
-    const res = await fetch(`${API_URL}/students/attention-queue?limit=${limit}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) return [];
-    const data = await res.json();
+    const data = await apiFetch<AttentionQueueItem[]>(`/students/attention-queue?limit=${limit}`);
     return Array.isArray(data) ? data : [];
   } catch {
     return [];

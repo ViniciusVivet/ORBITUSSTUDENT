@@ -1,10 +1,20 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/http-exception.filter';
 
+const logger = new Logger('Bootstrap');
+
 async function bootstrap() {
+  if (!process.env.DATABASE_URL) {
+    logger.error('DATABASE_URL nao configurado — API nao conectara ao banco.');
+    process.exit(1);
+  }
+  if (!process.env.JWT_SECRET) {
+    logger.warn('JWT_SECRET nao configurado — usando fallback inseguro. Defina JWT_SECRET em producao!');
+  }
+
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(
     new ValidationPipe({
@@ -37,7 +47,7 @@ async function bootstrap() {
 
   const port = process.env.PORT ?? 3001;
   await app.listen(port);
-  console.log(`API rodando em http://localhost:${port}`);
-  console.log(`Swagger em http://localhost:${port}/api/docs`);
+  logger.log(`API rodando em http://localhost:${port}`);
+  logger.log(`Swagger em http://localhost:${port}/api/docs`);
 }
 bootstrap();

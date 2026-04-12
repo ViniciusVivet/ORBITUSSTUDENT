@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsEnum, MinLength, IsArray, IsInt, Min, Max, IsDateString } from 'class-validator';
+import { IsString, IsOptional, IsEnum, MinLength, IsArray, IsInt, Min, Max, IsDateString, IsUrl } from 'class-validator';
 import { AvatarType } from '@prisma/client';
 
 export class CreateStudentDto {
@@ -25,6 +25,11 @@ export class CreateStudentDto {
   @ApiProperty({ example: 'warrior-1' })
   @IsString()
   avatarValue: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUrl()
+  photoUrl?: string | null;
 
   @IsOptional()
   @IsArray()

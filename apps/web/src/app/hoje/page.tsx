@@ -21,6 +21,7 @@ export default function HojePage() {
   const [overdue, setOverdue] = useState<OverdueGoal[]>([]);
   const [sessions, setSessions] = useState<TodaySession[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (typeof document !== 'undefined') document.title = 'Hoje — Orbitus';
@@ -50,7 +51,10 @@ export default function HojePage() {
         setOverdue(d.overdueGoals ?? []);
         setSessions(d.todaySessions ?? []);
       })
-      .catch(() => {})
+      .catch((e: unknown) => {
+        const msg = e instanceof Error ? e.message : 'Falha ao carregar dados de hoje.';
+        setError(msg);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -66,6 +70,17 @@ export default function HojePage() {
       {loading ? (
         <div className="space-y-4">
           {[1,2,3].map((i) => <div key={i} className="card-base h-24 animate-pulse" />)}
+        </div>
+      ) : error ? (
+        <div className="rounded-lg border border-red-500/30 bg-red-500/8 px-4 py-3">
+          <p className="text-sm text-red-400">{error}</p>
+          <button
+            type="button"
+            onClick={() => { setError(''); window.location.reload(); }}
+            className="mt-2 rounded bg-red-500/20 px-3 py-1 text-xs font-medium text-red-300 hover:bg-red-500/30"
+          >
+            Tentar novamente
+          </button>
         </div>
       ) : (
         <div className="space-y-6">

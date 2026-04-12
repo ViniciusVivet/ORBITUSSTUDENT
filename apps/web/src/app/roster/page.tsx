@@ -5,15 +5,17 @@ import Link from 'next/link';
 import { AnimatePresence } from 'framer-motion';
 import { isDemoMode } from '@/lib/mock-data';
 import { DetailPanel } from '@/components/DetailPanel';
-import { AttentionHintsBadges, attentionHintsVisible } from '@/components/AttentionHintsBadges';
 import { buildRosterCsv, buildRosterReportCsv } from '@/lib/csv-export';
 import { AttentionQueueBanner } from '@/components/roster/AttentionQueueBanner';
 import { StudentCard } from '@/components/roster/StudentCard';
 import { RosterFilters } from '@/components/roster/RosterFilters';
 import { BulkLessonBar } from '@/components/roster/BulkLessonBar';
+import { RosterMobilePlanetNav } from '@/components/roster/RosterMobilePlanetNav';
+import { RosterTableView } from '@/components/roster/RosterTableView';
 import { SpaceSidebar } from '@/components/SpaceSidebar';
 import { useRosterData } from '@/hooks/useRosterData';
 import { getPlanetColors } from '@/lib/planetColors';
+
 import type { StudentListItem } from '@orbitus/shared';
 
 export default function RosterPageWrapper() {
@@ -309,38 +311,11 @@ function RosterPage() {
         </header>
 
         {/* Mobile planet nav pills */}
-        <div className="lg:hidden flex gap-2 overflow-x-auto pb-2 px-3 pt-2 shrink-0 border-b border-[#1a2040]">
-          <button
-            type="button"
-            onClick={() => setFilters({ filterTurma: '' })}
-            className={`rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap transition ${
-              filters.filterTurma === ''
-                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                : 'border border-[#1a2040] text-gray-500 hover:text-gray-300'
-            }`}
-          >
-            ✦ Todas
-          </button>
-          {classGroups.map((g, i) => {
-            const color = getPlanetColors(g.name, i);
-            const isSelected = filters.filterTurma === g.id;
-            return (
-              <button
-                key={g.id}
-                type="button"
-                onClick={() => setFilters({ filterTurma: g.id })}
-                className="rounded-full border px-3 py-1 text-xs font-medium whitespace-nowrap transition"
-                style={{
-                  background: isSelected ? color.bg : undefined,
-                  borderColor: isSelected ? color.ring : '#1a2040',
-                  color: isSelected ? color.primary : '#6b7280',
-                }}
-              >
-                ● {g.name}
-              </button>
-            );
-          })}
-        </div>
+        <RosterMobilePlanetNav
+          classGroups={classGroups}
+          selectedGroupId={filters.filterTurma}
+          onSelect={(id) => setFilters({ filterTurma: id })}
+        />
 
         {/* Scrollable grid area */}
         <div id="main" className="flex-1 overflow-y-auto px-3 py-3">
@@ -432,96 +407,18 @@ function RosterPage() {
                 ))}
               </div>
             ) : (
-              <div className={`overflow-x-auto rounded-xl border border-[#1a2040] ${bulkMode ? 'pb-24' : ''}`}>
-                <table className="w-full min-w-[640px] border-collapse text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-[#1a2040] bg-[#111527] text-xs uppercase tracking-wider text-gray-500">
-                      <th className="px-4 py-3 font-medium">Aluno</th>
-                      <th className="px-4 py-3 font-medium">Turma</th>
-                      <th className="px-4 py-3 font-medium">Nível</th>
-                      <th className="px-4 py-3 font-medium">XP</th>
-                      <th className="px-4 py-3 font-medium">Status</th>
-                      <th className="px-4 py-3 font-medium">Triagem</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {displayedList.map((s, i) => {
-                      const h = s.attentionHints;
-                      const inQueue = attentionQueueIds.has(s.id);
-                      return (
-                        <tr
-                          key={s.id}
-                          ref={(el) => {
-                            itemRefs.current[i] = el;
-                          }}
-                          tabIndex={i === focusedIndex ? 0 : -1}
-                          aria-label={`Abrir painel de ${s.displayName}`}
-                          onClick={() => {
-                            if (bulkMode) {
-                              toggleSelect(s.id);
-                              return;
-                            }
-                            setFocusedIndex(i);
-                            openPanel(s);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              if (bulkMode) toggleSelect(s.id);
-                              else openPanel(s);
-                            }
-                          }}
-                          className={`cursor-pointer border-b border-[#1a2040]/60 transition hover:bg-[#141832]/60 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-orbitus-accent/40 ${i === focusedIndex ? 'bg-[#141832]/40' : ''} ${inQueue ? 'border-l-4 border-l-amber-500' : ''} ${selectedIds.has(s.id) ? 'bg-orbitus-accent/10' : ''} ${bulkFailedIds.has(s.id) ? 'bg-red-500/10' : ''}`}
-                        >
-                          <td className="px-4 py-3 font-medium text-gray-100">
-                            {bulkMode && (
-                              <input
-                                type="checkbox"
-                                readOnly
-                                checked={selectedIds.has(s.id)}
-                                className="mr-2 accent-orbitus-accent"
-                              />
-                            )}
-                            <span className="mr-2 inline-block w-6 text-center text-base" aria-hidden>
-                              {s.avatarType === 'emoji' ? s.avatarValue : '🧑‍🎓'}
-                            </span>
-                            {s.displayName}
-                            {inQueue && (
-                              <span
-                                className="ml-2 inline-block h-2 w-2 rounded-full bg-amber-500 animate-pulse"
-                                aria-label="Na fila de atenção"
-                              />
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-gray-500">{s.classGroup?.name ?? '—'}</td>
-                          <td className="px-4 py-3">
-                            <span className="badge-level">{s.level ?? '—'}</span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <span className="badge-xp">{s.xp ?? 0}</span>
-                          </td>
-                          <td className="px-4 py-3">
-                            <span
-                              className={
-                                s.status === 'active' ? 'badge-status-active' : 'badge-status-inactive'
-                              }
-                            >
-                              {s.status === 'active' ? 'ativo' : s.status}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3">
-                            {attentionHintsVisible(h) ? (
-                              <AttentionHintsBadges hints={h} variant="table" />
-                            ) : (
-                              <span className="text-gray-700">—</span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              <RosterTableView
+                students={displayedList}
+                focusedIndex={focusedIndex}
+                bulkMode={bulkMode}
+                selectedIds={selectedIds}
+                bulkFailedIds={bulkFailedIds}
+                attentionQueueIds={attentionQueueIds}
+                itemRefs={itemRefs}
+                onOpenPanel={openPanel}
+                onToggleSelect={toggleSelect}
+                onSetFocusedIndex={setFocusedIndex}
+              />
             )}
           </div>
 
