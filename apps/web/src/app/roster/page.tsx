@@ -185,7 +185,7 @@ function RosterPage() {
   // Loading skeleton
   if (loading) {
     return (
-      <div className="flex h-screen overflow-hidden" style={{ background: '#0a0e1a' }}>
+      <div className="flex h-screen overflow-hidden bg-[#050606]">
         <SpaceSidebar
           classGroups={[]}
           selectedGroupId=""
@@ -202,10 +202,10 @@ function RosterPage() {
               aria-label="Carregando alunos"
             >
               {Array.from({ length: 10 }).map((_, i) => (
-                <div key={i} className="rounded-xl border border-[#1a2040] bg-[#141832] p-4">
-                  <div className="mx-auto mb-3 h-16 w-16 animate-pulse rounded-full bg-[#1a2040]" />
-                  <div className="mb-2 h-3 w-3/4 mx-auto animate-pulse rounded bg-[#1a2040]" />
-                  <div className="h-2 w-full animate-pulse rounded-full bg-[#1a2040]" />
+                <div key={i} className="rounded-lg border border-white/10 bg-[#10110f] p-4">
+                  <div className="mx-auto mb-3 h-16 w-16 animate-pulse rounded-full bg-white/10" />
+                  <div className="mx-auto mb-2 h-3 w-3/4 animate-pulse rounded bg-white/10" />
+                  <div className="h-2 w-full animate-pulse rounded-full bg-white/10" />
                 </div>
               ))}
             </div>
@@ -216,7 +216,7 @@ function RosterPage() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: '#0a0e1a' }}>
+    <div className="flex h-screen overflow-hidden bg-[#050606]">
       {/* Left: SpaceSidebar (hidden on mobile) */}
       <SpaceSidebar
         classGroups={classGroups}
@@ -227,11 +227,11 @@ function RosterPage() {
       {/* Center: main content */}
       <div className="flex flex-1 flex-col overflow-hidden min-w-0">
         {/* Top bar */}
-        <header className="flex items-center gap-2 border-b border-[#1a2040] px-3 py-2.5 shrink-0 flex-wrap">
+        <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-white/10 bg-[#050606]/92 px-3 py-2.5 backdrop-blur">
           {/* Title */}
           <div className="mr-2 min-w-0 hidden sm:block">
-            <h1 className="text-sm font-bold text-white">Roster</h1>
-            <p className="text-[10px] text-gray-600">
+            <h1 className="text-sm font-bold text-white">Mapa dos alunos</h1>
+            <p className="text-[10px] text-zinc-600">
               {displayedList.length}
               {isDemoMode()
                 ? ` de ${filteredList.length}`
@@ -280,11 +280,11 @@ function RosterPage() {
             }}
             className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
               bulkMode
-                ? 'bg-orbitus-accent text-white'
-                : 'border border-orbitus-border text-gray-400 hover:border-orbitus-accent/50 hover:text-orbitus-accent-bright'
+                ? 'bg-[#f4e04d] text-[#050606]'
+                : 'border border-white/15 text-zinc-400 hover:border-[#7ee787]/50 hover:text-[#7ee787]'
             }`}
           >
-            {bulkMode ? '⚡ Sair' : '⚡ Lote'}
+            {bulkMode ? 'Sair do lote' : 'Aula em lote'}
           </button>
 
           {/* CSV buttons */}
@@ -327,7 +327,7 @@ function RosterPage() {
 
           {showDemoBanner && (
             <div className="mb-3 rounded-lg border border-orbitus-xp/30 bg-orbitus-xp/8 px-3 py-2 text-xs text-orbitus-xp">
-              🎮 Modo demo — dados de exemplo. Clique num aluno para abrir o painel.
+              Modo demo: dados de exemplo. Clique num aluno para abrir o painel.
             </div>
           )}
 
@@ -348,10 +348,10 @@ function RosterPage() {
           )}
 
           {displayedList.length === 0 && !error && (
-            <div className="rounded-xl border border-dashed border-[#1a2040] bg-[#141832]/30 p-12 text-center">
+            <div className="rounded-lg border border-dashed border-white/15 bg-[#10110f]/50 p-12 text-center">
               {filteredList.length === 0 ? (
                 <div>
-                  <p className="mb-4 text-4xl">🧑‍🎓</p>
+                  <p className="mb-4 text-sm font-semibold uppercase text-[#f4e04d]">Sem orbitas cadastradas</p>
                   <p className="mb-4 text-gray-400 text-sm">Nenhum aluno ainda.</p>
                   <Link href="/students/new" className="btn-primary inline-flex">
                     + Cadastrar primeiro aluno
@@ -433,12 +433,12 @@ function RosterPage() {
                   const student = displayedList[nextIndex];
                   if (student) openPanel(student);
                 }}
-                className="rounded border border-[#1a2040] px-2 py-1.5 text-xs text-gray-500 transition hover:bg-[#141832] hover:text-white"
+                className="rounded-lg border border-white/10 px-2 py-1.5 text-xs text-zinc-500 transition hover:bg-[#112217] hover:text-white"
                 aria-label="Anterior"
               >
-                ←
+                &lt;
               </button>
-              <span className="px-1.5 text-xs text-gray-600">
+              <span className="px-1.5 text-xs text-zinc-600">
                 {focusedIndex + 1}/{displayedList.length}
               </span>
               <button
@@ -449,10 +449,10 @@ function RosterPage() {
                   const student = displayedList[nextIndex];
                   if (student) openPanel(student);
                 }}
-                className="rounded border border-[#1a2040] px-2 py-1.5 text-xs text-gray-500 transition hover:bg-[#141832] hover:text-white"
-                aria-label="Próximo"
+                className="rounded-lg border border-white/10 px-2 py-1.5 text-xs text-zinc-500 transition hover:bg-[#112217] hover:text-white"
+                aria-label="Proximo"
               >
-                →
+                &gt;
               </button>
             </div>
           )}
@@ -465,7 +465,7 @@ function RosterPage() {
                 disabled={loadingMore}
                 className="btn-secondary px-8 disabled:opacity-50"
               >
-                {loadingMore ? 'Carregando…' : 'Carregar mais'}
+                {loadingMore ? 'Carregando...' : 'Carregar mais'}
               </button>
             </div>
           )}

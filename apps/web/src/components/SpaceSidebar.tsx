@@ -6,16 +6,14 @@ import { logout } from '@/lib/mock-data';
 
 interface Props {
   classGroups: { id: string; name: string }[];
-  selectedGroupId: string; // '' = all
+  selectedGroupId: string;
   onSelect: (id: string) => void;
-  onNavigate?: (path: string) => void;
 }
 
 function lightenColor(hex: string): string {
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
-  // blend with white at 40%
   const lr = Math.round(r + (255 - r) * 0.4);
   const lg = Math.round(g + (255 - g) * 0.4);
   const lb = Math.round(b + (255 - b) * 0.4);
@@ -26,72 +24,62 @@ export function SpaceSidebar({ classGroups, selectedGroupId, onSelect }: Props) 
   const allSelected = selectedGroupId === '';
 
   return (
-    <aside className="hidden lg:flex flex-col w-[200px] shrink-0 h-screen bg-[#0a0e1a]/95 backdrop-blur-md border-r border-[#1a2040] overflow-hidden">
-      {/* Logo */}
-      <div className="flex items-center gap-2 px-4 py-4 border-b border-[#1a2040] shrink-0">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-purple-800 shadow-[0_0_12px_rgba(139,92,246,0.5)] text-sm shrink-0">
-          ⚔
-        </div>
-        <span className="font-bold text-white tracking-tight text-sm">Orbitus</span>
+    <aside className="hidden h-screen w-[220px] shrink-0 flex-col overflow-hidden border-r border-white/10 bg-[#050606]/95 backdrop-blur-md lg:flex">
+      <div className="shrink-0 border-b border-white/10 px-4 py-4">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#f4e04d] text-sm font-black text-[#050606] shadow-[0_0_22px_rgba(244,224,77,0.22)]">
+            O
+          </div>
+          <div>
+            <span className="block text-sm font-bold text-white">Orbitus</span>
+            <span className="block text-[10px] text-zinc-500">observatorio</span>
+          </div>
+        </Link>
       </div>
 
-      {/* Planet list */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1" aria-label="Filtro por turma">
-        <p className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-600">Turmas</p>
+      <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-3" aria-label="Filtro por turma">
+        <p className="mb-2 px-2 text-[10px] font-semibold uppercase text-zinc-600">Mapa de turmas</p>
 
-        {/* "Todas" option — golden star */}
         <button
           type="button"
           onClick={() => onSelect('')}
-          className={`w-full flex items-center gap-3 rounded-lg px-2 py-2 text-left transition-all duration-200 group ${
-            allSelected
-              ? 'bg-amber-500/10 ring-1 ring-amber-500/30'
-              : 'hover:bg-white/5'
+          className={`group flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-all duration-200 ${
+            allSelected ? 'border border-[#f4e04d]/35 bg-[#f4e04d]/10' : 'border border-transparent hover:bg-white/5'
           }`}
         >
           <div
-            className="w-9 h-9 rounded-full shrink-0 transition-all duration-300 group-hover:scale-110"
+            className="h-9 w-9 shrink-0 rounded-full transition-all duration-300 group-hover:scale-105"
             style={{
-              background: 'radial-gradient(circle at 35% 35%, #fef3c7, #fbbf24 60%, #92400e)',
-              boxShadow: allSelected
-                ? '0 0 0 2px #fbbf24, 0 0 16px rgba(251,191,36,0.4)'
-                : '0 2px 8px rgba(0,0,0,0.5)',
+              background: 'radial-gradient(circle at 35% 35%, #fff7c2, #f4e04d 58%, #5d5008)',
+              boxShadow: allSelected ? '0 0 0 2px #f4e04d, 0 0 18px rgba(244,224,77,0.35)' : '0 2px 8px rgba(0,0,0,0.5)',
             }}
           />
-          <span className={`text-xs font-medium truncate ${allSelected ? 'text-amber-300' : 'text-gray-400 group-hover:text-gray-200'}`}>
-            ✦ Todas
+          <span className={`truncate text-xs font-medium ${allSelected ? 'text-[#f4e04d]' : 'text-zinc-400 group-hover:text-zinc-200'}`}>
+            Todas as orbitas
           </span>
         </button>
 
-        {/* Class group planets */}
-        {classGroups.map((group, i) => {
-          const color = getPlanetColors(group.name, i);
+        {classGroups.map((group, index) => {
+          const color = getPlanetColors(group.name, index);
           const selected = selectedGroupId === group.id;
           return (
             <button
               key={group.id}
               type="button"
               onClick={() => onSelect(group.id)}
-              className={`w-full flex items-center gap-3 rounded-lg px-2 py-2 text-left transition-all duration-200 group ${
-                selected
-                  ? 'bg-white/5'
-                  : 'hover:bg-white/5'
+              className={`group flex w-full items-center gap-3 rounded-lg border px-2 py-2 text-left transition-all duration-200 ${
+                selected ? 'border-white/10 bg-white/5' : 'border-transparent hover:bg-white/5'
               }`}
             >
               <div
-                className="w-9 h-9 rounded-full shrink-0 transition-all duration-300 group-hover:scale-110"
+                className="h-9 w-9 shrink-0 rounded-full transition-all duration-300 group-hover:scale-105"
                 style={{
-                  background: `radial-gradient(circle at 35% 35%, ${lightenColor(color.primary)}, ${color.primary} 60%, #0a0e1a)`,
-                  boxShadow: selected
-                    ? `0 0 0 2px ${color.ring}, 0 0 16px ${color.glow}`
-                    : '0 2px 8px rgba(0,0,0,0.5)',
+                  background: `radial-gradient(circle at 35% 35%, ${lightenColor(color.primary)}, ${color.primary} 60%, #050606)`,
+                  boxShadow: selected ? `0 0 0 2px ${color.ring}, 0 0 16px ${color.glow}` : '0 2px 8px rgba(0,0,0,0.5)',
                 }}
               />
-              <span
-                className="text-xs font-medium truncate transition-colors"
-                style={{ color: selected ? color.primary : undefined }}
-              >
-                {!selected && <span className="text-gray-400 group-hover:text-gray-200">{group.name}</span>}
+              <span className="truncate text-xs font-medium transition-colors" style={{ color: selected ? color.primary : undefined }}>
+                {!selected && <span className="text-zinc-400 group-hover:text-zinc-200">{group.name}</span>}
                 {selected && group.name}
               </span>
             </button>
@@ -99,28 +87,21 @@ export function SpaceSidebar({ classGroups, selectedGroupId, onSelect }: Props) 
         })}
       </nav>
 
-      {/* Bottom nav */}
-      <div className="shrink-0 border-t border-[#1a2040] p-2 space-y-1">
-        <Link
-          href="/dashboard"
-          className="flex items-center gap-3 rounded-lg px-2 py-2 text-xs text-gray-500 hover:text-gray-200 hover:bg-white/5 transition-all"
-        >
-          <span className="w-9 h-9 flex items-center justify-center text-base">📊</span>
-          <span>Dashboard</span>
+      <div className="shrink-0 space-y-1 border-t border-white/10 p-2">
+        <Link href="/dashboard" className="flex items-center gap-3 rounded-lg px-2 py-2 text-xs text-zinc-500 transition-all hover:bg-[#112217] hover:text-[#7ee787]">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-[10px] font-bold">SIG</span>
+          <span>Sinais</span>
         </Link>
-        <Link
-          href="/students/new"
-          className="flex items-center gap-3 rounded-lg px-2 py-2 text-xs text-gray-500 hover:text-gray-200 hover:bg-white/5 transition-all"
-        >
-          <span className="w-9 h-9 flex items-center justify-center text-base">➕</span>
-          <span>+ Aluno</span>
+        <Link href="/students/new" className="flex items-center gap-3 rounded-lg px-2 py-2 text-xs text-zinc-500 transition-all hover:bg-[#112217] hover:text-[#7ee787]">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-sm font-bold">+</span>
+          <span>Novo aluno</span>
         </Link>
         <button
           type="button"
           onClick={logout}
-          className="w-full flex items-center gap-3 rounded-lg px-2 py-2 text-xs text-red-500/70 hover:text-red-400 hover:bg-red-500/5 transition-all"
+          className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-xs text-red-400/75 transition-all hover:bg-red-500/10 hover:text-red-300"
         >
-          <span className="w-9 h-9 flex items-center justify-center text-base">🚪</span>
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-red-400/20 text-[10px] font-bold">OFF</span>
           <span>Sair</span>
         </button>
       </div>
